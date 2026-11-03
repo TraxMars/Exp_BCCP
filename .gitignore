@@ -1,0 +1,34 @@
+# Model weights and training checkpoints
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+*.onnx
+*.bin
+
+# Generated arrays and dataset volumes
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.nii
+*.nii.gz
+*.mha
+*.mhd
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.DS_Store
+
+# TensorBoard events
+events.out.tfevents.*
+tensorboard/
+
+# Local credentials
+.env
+.env.*
+!.env.example
