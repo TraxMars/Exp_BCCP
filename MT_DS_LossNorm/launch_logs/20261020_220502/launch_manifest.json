@@ -1,0 +1,98 @@
+{
+  "created_at": "20261020_220502",
+  "timezone": "Asia/Shanghai",
+  "seed": 42,
+  "label_percent": 20,
+  "gpu_free_before_launch_mib": {
+    "0": 8822,
+    "1": 6133,
+    "2": 4516,
+    "3": 10624,
+    "4": 13043,
+    "5": 9231,
+    "6": 956
+  },
+  "runs": [
+    {
+      "dataset": "LA",
+      "labelnum": 16,
+      "gpu": 4,
+      "output_dir": "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/Results/seed_42/LA_16l",
+      "command": [
+        "/aita_data/home/aita_duanxuelong/.conda/envs/SSL29/bin/python",
+        "-u",
+        "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/code/train.py",
+        "--dataset",
+        "LA",
+        "--labelnum",
+        "16",
+        "--seed",
+        "42",
+        "--gpu",
+        "4",
+        "--data_root",
+        "/aita_data/home/aita_duanxuelong/Dataset",
+        "--output_dir",
+        "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/Results/seed_42/LA_16l",
+        "--max_iterations",
+        "15000"
+      ],
+      "pid": 3620134,
+      "launch_log": "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/launch_logs/20261020_220502/LA.log"
+    },
+    {
+      "dataset": "Pancreas",
+      "labelnum": 12,
+      "gpu": 3,
+      "output_dir": "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/Results/seed_42/Pancreas_12l",
+      "command": [
+        "/aita_data/home/aita_duanxuelong/.conda/envs/SSL29/bin/python",
+        "-u",
+        "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/code/train.py",
+        "--dataset",
+        "Pancreas",
+        "--labelnum",
+        "12",
+        "--seed",
+        "42",
+        "--gpu",
+        "3",
+        "--data_root",
+        "/aita_data/home/aita_duanxuelong/Dataset",
+        "--output_dir",
+        "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/Results/seed_42/Pancreas_12l",
+        "--max_iterations",
+        "15000"
+      ],
+      "pid": 3620135,
+      "launch_log": "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/launch_logs/20261020_220502/Pancreas.log"
+    },
+    {
+      "dataset": "BraTS19",
+      "labelnum": 50,
+      "gpu": 5,
+      "output_dir": "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/Results/seed_42/BraTS19_50l",
+      "command": [
+        "/aita_data/home/aita_duanxuelong/.conda/envs/SSL29/bin/python",
+        "-u",
+        "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/code/train.py",
+        "--dataset",
+        "BraTS19",
+        "--labelnum",
+        "50",
+        "--seed",
+        "42",
+        "--gpu",
+        "5",
+        "--data_root",
+        "/aita_data/home/aita_duanxuelong/Dataset",
+        "--output_dir",
+        "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/Results/seed_42/BraTS19_50l",
+        "--max_iterations",
+        "15000"
+      ],
+      "pid": 3620136,
+      "launch_log": "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm/launch_logs/20261020_220502/BraTS19.log"
+    }
+  ]
+}

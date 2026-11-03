@@ -1,0 +1,49 @@
+# Keep source, configs, metrics, and text experiment records in Git.
+# Model weights and training state
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+*.onnx
+*.bin
+
+# Generated arrays, datasets, predictions, and volumes
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.nii
+*.nii.gz
+*.mha
+*.mhd
+
+# Generated visualizations and TensorBoard events
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.pdf
+*.mp4
+*.avi
+events.out.tfevents.*
+tensorboard/
+
+# Caches, environments, runtime locks, and archives
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.idea/
+.vscode/
+.DS_Store
+*.lock
+*.zip
+*.tar
+*.tar.gz
+
+# Local secrets
+.env
+.env.*
+!.env.example

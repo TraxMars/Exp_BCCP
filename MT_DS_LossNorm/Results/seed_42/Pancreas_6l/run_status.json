@@ -1,0 +1,12 @@
+{
+  "dataset": "Pancreas",
+  "labelnum": 6,
+  "seed": 42,
+  "gpu": "0",
+  "pid": 1897274,
+  "max_iterations": 15000,
+  "state": "completed",
+  "iteration": 15000,
+  "updated_at": "2026-10-21T03:51:02+08:00",
+  "best_dice": 0.8154209848331424
+}

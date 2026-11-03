@@ -1,0 +1,99 @@
+{
+  "preserved_at": "2026-10-21T17:07:04+08:00",
+  "project": "/aita_data/home/aita_duanxuelong/MT_DS_LossNorm",
+  "description": "Completed Mean Teacher + four-scale DS + LossNorm version; six runs retained in place",
+  "sha256": {
+    "code/train.py": "5da28e7732cb3e43efbd31dd4828958ec3fcfb660f70aeea111fcbd82e1cc6c7",
+    "code/data.py": "2d2dffc6b84c8e3f704348d7afec8f0bd82690ccb8ff990dbb924f7a1ee1377d",
+    "code/objectives.py": "c2768ba6753d880b83be19a858a3df3f91d60ce96801d10a4df0f79301366384",
+    "code/evaluate.py": "a2904f0981165b0bd7640c3202d897e7feaa8f9a37df3efe103c3bd6d2327421",
+    "code/networks/vnet_ds.py": "57f29fc308d484c09cd2f080c5e283aea7a59e99eb4b0bf5612a25bd0e1e41b2",
+    "code/networks/__init__.py": "85c7cedba3b4be93ff6b7f172a17c2bbc251de3477dcbd6dfadc7892eae3c946",
+    "Results/seed_42/BraTS19_25l/test_metrics.json": "959cac27d6204d7a62e25092b54cb9bfa79e0973604963ab192f5d18af18727e",
+    "Results/seed_42/BraTS19_25l/config.json": "978c6ce2856f3b37d1acf7c4c3ea6c2317b81a44feaec29005bf2e2e328df42d",
+    "Results/seed_42/BraTS19_25l/best_metrics.json": "181fdf7ef607a8345b658aa7fe8d650e6a15542b87d5871c8f52edaa9053d01a",
+    "Results/seed_42/BraTS19_25l/data_split_manifest.json": "eed12429ecb3c2fdbe2f3300eede831dc33b5cc1c6b50f20ba45e97307727d79",
+    "Results/seed_42/BraTS19_25l/run_status.json": "a0392401d3ea066e6766900e443b40372678a0ac04b4a6f428c35109aa9ff9b3",
+    "Results/seed_42/LA_16l/best_metrics.json": "876855411b8d7ade0d1d63d6b47f7225a9c666f720e078d2eacdbdf48bfeff2c",
+    "Results/seed_42/LA_16l/data_split_manifest.json": "31a4d7ad3ff7d96e7fb72221a8f3c9184585115e3c24346b36ea726ef6cec6b7",
+    "Results/seed_42/LA_16l/run_status.json": "c7f932e47caf08ea2312427d9051e81262fc47caaaf43e62ce2efc7d8fdbdb19",
+    "Results/seed_42/LA_16l/test_metrics.json": "3faf2787cccd6f51d50224b7313bb09afe59aaf58acc247976f44c4ea415bc63",
+    "Results/seed_42/LA_16l/config.json": "fc92949f0fe2ba8357c421c2a2ffa219939110b1db034d2d70b211a9a47af5f0",
+    "Results/seed_42/BraTS19_50l/test_metrics.json": "d5f416549c7eb0a146026dabd60f9d11865e81f3c0b6daed28413a440f8da51d",
+    "Results/seed_42/BraTS19_50l/data_split_manifest.json": "2f1176bc2d60ec0cfceb377fc42cf2c402e6b16675b61920bd18068df36f4f6c",
+    "Results/seed_42/BraTS19_50l/config.json": "fb60986fb72e083d099c028827dfaa9f3d7074c943b414375ac0d90599baf671",
+    "Results/seed_42/BraTS19_50l/run_status.json": "c28aef2ddf45c40449aed1d4742b4b025b5aba47f706f4c898f64c07bb55ce9d",
+    "Results/seed_42/BraTS19_50l/best_metrics.json": "1c9333a476126f8915c6c5f1d21716d8d605b4bbd86654c7e50d280f63cdb3b7",
+    "Results/seed_42/Pancreas_6l/config.json": "131171a691d6348d9a88354d4b7219f16c1b60de508ceb9edfa3837706fba3c8",
+    "Results/seed_42/Pancreas_6l/test_metrics.json": "d79906f5793929e5fe4bf4d071bdb5abc23af4bb43cbc257c0d589e0e0c66c57",
+    "Results/seed_42/Pancreas_6l/run_status.json": "53bfe6fb85f9daecfb97e182c63b3ab2bd63b37ed3c88efabf831890699af33a",
+    "Results/seed_42/Pancreas_6l/best_metrics.json": "caaa5d65f4aa6d0647c9edf18b232b977b9be4f27d89e382d5449899a38fda1b",
+    "Results/seed_42/Pancreas_6l/data_split_manifest.json": "f49704746b9fd5cb10ad140f13c2b1935eb9d0f7820e11e44d66f2f9ef6a91d1",
+    "Results/seed_42/LA_8l/best_metrics.json": "f1a11e01a7949345a2c4864d94bc2a82fb2b6eca98f4c27907fb3feaadd0576a",
+    "Results/seed_42/LA_8l/config.json": "2e5cf1a6ecc430cb49cbca1b2eb915287cbfdce03601463013a8e21fb8a87d99",
+    "Results/seed_42/LA_8l/run_status.json": "d487356f3a14a71e03e25ef2e63fcc5d24b520692684d4fa44edd0b01b747b63",
+    "Results/seed_42/LA_8l/data_split_manifest.json": "dffcc44ed2b7ca0d3f4981327159c1c5223c3a1ebdc8d642ab3386aa7b98a49e",
+    "Results/seed_42/LA_8l/test_metrics.json": "24e2ff444a4f1eac0f446cb9afcb60e70138a25f4d62e1ca7c35daa7a8f027c7",
+    "Results/seed_42/Pancreas_12l/best_metrics.json": "7e66f0099b701e55061049df98975bfcd62c9e0483b6c5bd1efd18fd2ab6458c",
+    "Results/seed_42/Pancreas_12l/run_status.json": "c4c5fc252b289141b6145d225cb66693605688d834266770c1d4ab409c649e03",
+    "Results/seed_42/Pancreas_12l/config.json": "2b92fb2e86c64b22c1cb3d46326a78dcb99dc507201804756728e283c05efc62",
+    "Results/seed_42/Pancreas_12l/test_metrics.json": "9b6919f4ccbff2214c7e16f07275936d74cd7c3219a10e729b93daa15973b212",
+    "Results/seed_42/Pancreas_12l/data_split_manifest.json": "06a3fefbfe7d3c77e144e9433727ef79d4e1246d04caf8322589ca11a1d3c737"
+  },
+  "checkpoints": {
+    "Results/seed_42/BraTS19_25l/last_checkpoint.pth": {
+      "size_bytes": 113639023
+    },
+    "Results/seed_42/BraTS19_25l/best_model.pth": {
+      "size_bytes": 37892324
+    },
+    "Results/seed_42/BraTS19_25l/teacher_at_best_student.pth": {
+      "size_bytes": 37895209
+    },
+    "Results/seed_42/LA_16l/best_model.pth": {
+      "size_bytes": 37892324
+    },
+    "Results/seed_42/LA_16l/last_checkpoint.pth": {
+      "size_bytes": 113638959
+    },
+    "Results/seed_42/LA_16l/teacher_at_best_student.pth": {
+      "size_bytes": 37895209
+    },
+    "Results/seed_42/BraTS19_50l/last_checkpoint.pth": {
+      "size_bytes": 113639023
+    },
+    "Results/seed_42/BraTS19_50l/teacher_at_best_student.pth": {
+      "size_bytes": 37895209
+    },
+    "Results/seed_42/BraTS19_50l/best_model.pth": {
+      "size_bytes": 37892324
+    },
+    "Results/seed_42/Pancreas_6l/best_model.pth": {
+      "size_bytes": 37892324
+    },
+    "Results/seed_42/Pancreas_6l/last_checkpoint.pth": {
+      "size_bytes": 113639023
+    },
+    "Results/seed_42/Pancreas_6l/teacher_at_best_student.pth": {
+      "size_bytes": 37895209
+    },
+    "Results/seed_42/LA_8l/teacher_at_best_student.pth": {
+      "size_bytes": 37895209
+    },
+    "Results/seed_42/LA_8l/best_model.pth": {
+      "size_bytes": 37892324
+    },
+    "Results/seed_42/LA_8l/last_checkpoint.pth": {
+      "size_bytes": 113638959
+    },
+    "Results/seed_42/Pancreas_12l/teacher_at_best_student.pth": {
+      "size_bytes": 37895209
+    },
+    "Results/seed_42/Pancreas_12l/last_checkpoint.pth": {
+      "size_bytes": 113639023
+    },
+    "Results/seed_42/Pancreas_12l/best_model.pth": {
+      "size_bytes": 37892324
+    }
+  }
+}

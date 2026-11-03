@@ -1,0 +1,107 @@
+{
+  "purpose": "Real-data integration checks only; these are not trained experiment performance results",
+  "datasets": {
+    "LA": {
+      "training_state": "completed",
+      "verified_iteration": 3,
+      "full_resolution_patch": [
+        112,
+        112,
+        80
+      ],
+      "checkpoint_optimizer_state_present": true,
+      "validation_pipeline_first_case": {
+        "split": "test",
+        "cases": 1,
+        "per_case": [
+          {
+            "case": "UPT6DX9IQY9JAZ7HJKA7",
+            "dice": 0.1843661492538913,
+            "jc": 0.10154368358913814,
+            "hd95": 55.60575509783138,
+            "asd": 34.96597785237338
+          }
+        ],
+        "surface_metric_cases": 1,
+        "dice": 0.1843661492538913,
+        "jc": 0.10154368358913814,
+        "hd95": 55.60575509783138,
+        "asd": 34.96597785237338
+      }
+    },
+    "Pancreas": {
+      "training_state": "completed",
+      "verified_iteration": 2,
+      "full_resolution_patch": [
+        96,
+        96,
+        96
+      ],
+      "checkpoint_optimizer_state_present": true,
+      "validation_pipeline_first_case": {
+        "split": "test",
+        "cases": 1,
+        "per_case": [
+          {
+            "case": "image0050",
+            "dice": 0.014539501876064759,
+            "jc": 0.007322987231326514,
+            "hd95": 151.21507861321237,
+            "asd": 98.7907304458805
+          }
+        ],
+        "surface_metric_cases": 1,
+        "dice": 0.014539501876064759,
+        "jc": 0.007322987231326514,
+        "hd95": 151.21507861321237,
+        "asd": 98.7907304458805
+      }
+    },
+    "BraTS19": {
+      "training_state": "completed",
+      "verified_iteration": 2,
+      "full_resolution_patch": [
+        96,
+        96,
+        96
+      ],
+      "checkpoint_optimizer_state_present": true,
+      "validation_pipeline_first_case": {
+        "split": "val",
+        "cases": 1,
+        "per_case": [
+          {
+            "case": "BraTS19_CBICA_AAP_1",
+            "dice": 0.062098385706449336,
+            "jc": 0.03204413745694045,
+            "hd95": 107.4197374787334,
+            "asd": 62.185446100538286
+          }
+        ],
+        "surface_metric_cases": 1,
+        "dice": 0.062098385706449336,
+        "jc": 0.03204413745694045,
+        "hd95": 107.4197374787334,
+        "asd": 62.185446100538286
+      }
+    }
+  },
+  "checked_at": "2026-10-20T19:00:56+08:00",
+  "core_verification": {
+    "original_four_scale_predictions_bitwise_equal": true,
+    "all_four_heads_have_finite_nonzero_gradients": true,
+    "teacher_targets_gradient_isolated": true,
+    "ema_initial_update_verified": true,
+    "normalization_gradient_and_zero_safeguard_verified": true,
+    "sliding_window_overlap_and_padding_verified": true,
+    "full_checkpoint_resume_verified": true
+  },
+  "source_sha256": {
+    "code/train.py": "5da28e7732cb3e43efbd31dd4828958ec3fcfb660f70aeea111fcbd82e1cc6c7",
+    "code/data.py": "2d2dffc6b84c8e3f704348d7afec8f0bd82690ccb8ff990dbb924f7a1ee1377d",
+    "code/objectives.py": "c2768ba6753d880b83be19a858a3df3f91d60ce96801d10a4df0f79301366384",
+    "code/evaluate.py": "a2904f0981165b0bd7640c3202d897e7feaa8f9a37df3efe103c3bd6d2327421",
+    "code/networks/vnet_ds.py": "57f29fc308d484c09cd2f080c5e283aea7a59e99eb4b0bf5612a25bd0e1e41b2",
+    "code/networks/__init__.py": "85c7cedba3b4be93ff6b7f172a17c2bbc251de3477dcbd6dfadc7892eae3c946"
+  }
+}

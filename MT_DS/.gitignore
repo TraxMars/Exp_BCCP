@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+Results/
+launch_logs/
+verification_runs/

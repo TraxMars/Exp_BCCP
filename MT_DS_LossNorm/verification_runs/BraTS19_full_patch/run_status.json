@@ -1,0 +1,12 @@
+{
+  "dataset": "BraTS19",
+  "labelnum": 25,
+  "seed": 42,
+  "gpu": "5",
+  "pid": 1878358,
+  "max_iterations": 2,
+  "state": "completed",
+  "iteration": 2,
+  "updated_at": "2026-10-20T18:58:24+08:00",
+  "best_dice": null
+}
