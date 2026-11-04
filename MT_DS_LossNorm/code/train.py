@@ -45,6 +45,10 @@ def arguments():
     parser.add_argument("--cbc_log_interval", type=int, default=50)
     parser.add_argument("--cbc_band_radius", type=int, default=2)
     parser.add_argument("--cbc_top_fraction", type=float, default=0.25)
+    # Coarse-head probe target: the supervised nearest-neighbour label, or the old soft average.
+    parser.add_argument("--cbc_coarse_target", choices=["nearest", "soft"], default="nearest")
+    # 1b: band CE probes (cbc.py); 1c: gain-free probes and D2 closed-form contrast (cbc_gain.py).
+    parser.add_argument("--cbc_tracker", choices=["1b", "1c"], default="1b")
     # Logging only: CBC of the unlabeled images against their hidden GT.
     parser.add_argument("--cbc_oracle", action="store_true")
     # Step 2: channel perturbation of an unlabeled decoder tap, consistency to the Teacher.
@@ -115,6 +119,7 @@ def train(args):
     from networks import VNetDS
     from objectives import supervised_loss, consistency_loss, normalize_loss, update_ema
     from cbc import CBCTracker
+    from cbc_gain import GainFreeTracker
     from perturbation import TAP_FIRST_HEAD, channel_dropout, frozen_bn_statistics
 
     if args.device == "cuda" and not torch.cuda.is_available():
@@ -144,12 +149,18 @@ def train(args):
     teacher = copy.deepcopy(student).requires_grad_(False)
     optimizer = torch.optim.SGD(student.parameters(), lr=args.base_lr,
                                 momentum=0.9, weight_decay=1e-4)
-    tracker = (CBCTracker(args.max_iterations, args.cbc_band_radius, args.cbc_top_fraction)
-               if args.cbc_interval else None)
+    if not args.cbc_interval:
+        tracker = None
+    elif args.cbc_tracker == "1c":
+        tracker = GainFreeTracker(args.max_iterations, student.out_conv_2, args.cbc_band_radius,
+                                  args.cbc_top_fraction)
+    else:
+        tracker = CBCTracker(args.max_iterations, args.cbc_band_radius, args.cbc_top_fraction,
+                             args.cbc_coarse_target)
     config = {key: str(value) if isinstance(value, Path) else value
               for key, value in vars(args).items()}
     config.update(experiment="MT_DS_LossNorm", consistency_loss="four_scale_softmax_mse",
-                  observation=("none" if tracker is None else "cbc_d3_d2_no_intervention"
+                  observation=("none" if tracker is None else f"cbc{args.cbc_tracker}_d3_d2_no_intervention"
                                + ("_with_oracle_logging" if args.cbc_oracle else "")),
                   oracle_gt_in_objective=False,
                   feature_perturbation=("none" if args.fp_tap == "none" else
@@ -167,7 +178,8 @@ def train(args):
                     "base_lr", "ema_decay", "consistency", "warmup_iterations", "normalization_eps"):
             if json.dumps(config[key]) != json.dumps(saved_config[key]):
                 raise ValueError(f"Resume configuration mismatch: {key}")
-        for key, default in (("fp_tap", "none"), ("fp_drop", 0.5), ("fp_weight", 1.0)):
+        for key, default in (("fp_tap", "none"), ("fp_drop", 0.5), ("fp_weight", 1.0),
+                             ("cbc_tracker", "1b")):
             if config[key] != saved_config.get(key, default):
                 raise ValueError(f"Resume configuration mismatch: {key}")
         saved_manifest = json.loads((args.output_dir / "data_split_manifest.json").read_text())

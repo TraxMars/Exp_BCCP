@@ -5,6 +5,7 @@ import sys
 import tempfile
 
 import torch
+import torch.nn.functional as F
 
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -143,10 +144,20 @@ def check_no_side_effects():
     exact = labeled_probes(outputs, labels, 2)
     torch.testing.assert_close(torch.stack(pseudo[:2]), torch.stack(exact[:2]))
     assert band_iou(band, boundary_band(labels, 2)) == 1.0
+    # A prediction equal to the supervised (nearest-neighbour) targets has no boundary error
+    # under the nearest probe on every head, but the soft target still penalizes it.
+    fitted = [None]
+    for output in outputs[1:]:
+        target = F.interpolate(labels[:, None].float(), size=output.shape[2:], mode="nearest")[:, 0]
+        fitted.append(torch.stack([-20 * (2 * target - 1), 20 * (2 * target - 1)], 1))
+    nearest = labeled_probes(fitted, labels, 2, "nearest")
+    soft = labeled_probes(fitted, labels, 2, "soft")
+    assert nearest[0] < 1e-6 and max(nearest[2][f"loss_bd_h{i}"] for i in (1, 2, 3)) < 1e-6
+    assert soft[2]["loss_bd_h1"] > 1 and soft[2]["loss_bd_h3"] < 1e-6
     # A band covering the whole patch leaves the region probe undefined.
     grid = torch.stack(torch.meshgrid(*[torch.arange(32)] * 3, indexing="ij")).sum(0) % 2
     assert labeled_probes(outputs, grid.expand(2, -1, -1, -1), 1) is None
-    print("PASS: empty or all-covering labeled / pseudo-label bands are skipped")
+    print("PASS: empty or all-covering bands are skipped; nearest probe matches the training target")
 
     with tempfile.TemporaryDirectory() as directory:
         directory = Path(directory)
@@ -157,7 +168,8 @@ def check_no_side_effects():
         assert len(lines) == 1 + 2 * len(TAPS)
         header = lines[0].split(",")
         for name in ("lab_split_rho", "unl_lag_rho", "orc_lag_rho_rg", "rho_unl_orc_bd",
-                     "rho_lab_orc_bd", "unl_band_iou_gt", "unl_band_confidence", "lab_valid_images"):
+                     "rho_lab_orc_bd", "unl_band_iou_gt", "unl_band_confidence", "lab_valid_images",
+                     "lab_loss_bd_h1", "orc_loss_rg_h3"):
             assert name in header, name
         restored = CBCTracker(max_iterations=10)
         restored.load_state_dict(copy.deepcopy(tracker.state_dict()))

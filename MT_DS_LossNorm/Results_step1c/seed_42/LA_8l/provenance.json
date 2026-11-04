@@ -1,0 +1,6 @@
+{
+  "source": "/aita_data/home/aita_duanxuelong/DuCiSC-main/DuCiSC-main/code/networks/VNet.py",
+  "source_sha256": "3875141b68fd9823798f54bbb50bf99031ec075f852d73feb0f15bba57feb93a",
+  "preserved": "VNet blocks, four deep supervision heads, and output ordering",
+  "removed": "prototype feature outputs and unused network classes"
+}

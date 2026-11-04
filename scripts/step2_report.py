@@ -13,7 +13,7 @@ from pathlib import Path
 
 EXPERIMENT = Path(__file__).resolve().parents[1]
 BASELINES = ("MT_DS", "MT_DS_LossNorm")
-CONDITION = "random_d2_p0.5"
+CONDITIONS = (("随机丢弃 p=0.5", "random_d2_p0.5"), ("不丢弃对照 p=0", "nodrop_d2_p0"))
 
 
 def read_jsonl(path):
@@ -48,19 +48,23 @@ def fmt(value, scale=1.0):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--run", default="LA_8l")
+    parser.add_argument("--runs", nargs="+", default=["LA_8l", "Pancreas_6l"])
     args = parser.parse_args()
-    lines = ["# Step 2：无标签 D2 随机通道丢弃（p=0.5，权重 1）", "",
+    lines = ["# Step 2：无标签 D2 通道丢弃（权重 1）与不丢弃对照", "",
              "Dice / JC 为百分数，HD95 / ASD 为体素。LA 的在线验证与测试是同一 test.list。", "",
-             "| 基线 | 条件 | 状态 | 最佳验证 Dice（步） | 最后 5 次均值 | Test Dice | JC | HD95 | ASD | loss_fp (×1e-3) | 相对扰动 |",
-             "|---|---|---|---|---|---|---|---|---|---|---|"]
-    for baseline in BASELINES:
-        for label, run in (("基线", EXPERIMENT / baseline / "Results" / f"seed_{args.seed}" / args.run),
-                           ("随机丢弃", EXPERIMENT / baseline / "Results_step2" / CONDITION / f"seed_{args.seed}" / args.run)):
+             "| 数据 | 基线 | 条件 | 状态 | 最佳验证 Dice（步） | 最后 5 次均值 | Test Dice | JC | HD95 | ASD | loss_fp (×1e-3) | 相对扰动 |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for name, baseline in ((name, baseline) for name in args.runs for baseline in BASELINES):
+        runs = [("基线", EXPERIMENT / baseline / "Results" / f"seed_{args.seed}" / name)]
+        runs += [(label, EXPERIMENT / baseline / "Results_step2" / condition / f"seed_{args.seed}" / name)
+                 for label, condition in CONDITIONS]
+        for label, run in runs:
+            if label != "基线" and not run.is_dir():
+                continue
             result = summarize(run)
             test = result["test"]
             lines.append(
-                f"| {baseline} | {label} | {result['state']} ({result['iteration']}) | "
+                f"| {name} | {baseline} | {label} | {result['state']} ({result['iteration']}) | "
                 f"{fmt(result['best'])}（{result['best_iteration']}） | {fmt(result['last5'])} | "
                 f"{fmt(test['dice'], 100)} | {fmt(test['jc'], 100)} | {fmt(test['hd95'])} | {fmt(test['asd'])} | "
                 f"{fmt(result['loss_fp'], 1000)} | {fmt(result['fp_change'])} |")

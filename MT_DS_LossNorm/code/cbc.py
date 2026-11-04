@@ -8,8 +8,11 @@ For a tap feature F and probe loss L, psi_c = mean_x dL/dF_c(x) * F_c(x). Removi
 channel c changes L by about -sum_x dL/dF_c * F_c, so psi_c < 0 means the channel
 currently helps the probe, and psi_c > 0 means it hurts. A channel group's score is the
 sum of its members' scores. Every stream has a boundary probe (bd) and a region probe on
-the complementary voxels (rg), all of the same form: soft-target CE inside / outside a
-full-resolution morphological band, weighted by a confidence map.
+the complementary voxels (rg), all of the same form: CE inside / outside a full-resolution
+morphological band, weighted by a confidence map. On the coarse heads the target is the
+nearest-neighbour label the supervised loss trains on ("nearest"); the average-pooled soft
+target ("soft", used by the LA step-1/1b runs) pulls mixed boundary voxels towards 0.5,
+against the training target.
 
   lab  labeled images, GT target, confidence 1
   unl  unlabeled images, Teacher hard pseudo-label target, Teacher confidence
@@ -34,6 +37,7 @@ PROBE_HEADS = (1, 2, 3)    # deep-supervision outputs at 1/4, 1/2 and full resol
 STREAMS = ("lab", "unl", "orc")
 PAIRS = (("lab", "unl"), ("lab", "orc"), ("unl", "orc"))
 KINDS = ("bd", "rg")
+COARSE_TARGETS = ("nearest", "soft")
 TINY = 1e-30
 
 
@@ -58,11 +62,21 @@ def weighted_mean(values, weights):
     return (values * weights).sum() / weights.sum()
 
 
-def band_probes(outputs, target, band, confidence):
-    """Soft-target CE inside / outside the band, averaged over the probe heads.
+def head_target(target, shape, coarse_target):
+    """Probe target on one head's grid; "nearest" matches objectives.supervised_loss."""
+    if coarse_target == "nearest":
+        return F.interpolate(target[:, None].float(), size=shape, mode="nearest")[:, 0]
+    if coarse_target == "soft":
+        return pool_to(target.float(), shape)
+    raise ValueError(f"Unknown coarse target {coarse_target}")
 
-    Images whose band is empty or covers the whole patch leave one probe undefined and
-    are excluded; None when no image is usable.
+
+def band_probes(outputs, target, band, confidence, coarse_target="nearest"):
+    """CE inside / outside the band, averaged over the probe heads.
+
+    Band and confidence are average-pooled onto each head as soft weights. Images whose
+    band is empty or covers the whole patch leave one probe undefined and are excluded;
+    None when no image is usable.
     """
     flat = band.flatten(1) > 0
     valid = flat.any(dim=1) & ~flat.all(dim=1)
@@ -73,29 +87,30 @@ def band_probes(outputs, target, band, confidence):
     for index in PROBE_HEADS:
         logits = outputs[index]
         shape = logits.shape[2:]
-        # Average-pooled targets and bands avoid nearest-neighbour boundary aliasing.
-        soft_target, weight = pool_to(target.float(), shape), pool_to(band, shape)
-        trust = pool_to(confidence, shape)
+        head = head_target(target, shape, coarse_target)
+        weight, trust = pool_to(band, shape), pool_to(confidence, shape)
         log_probability = logits.log_softmax(dim=1)
-        ce = -(soft_target * log_probability[:, 1] + (1 - soft_target) * log_probability[:, 0])
+        ce = -(head * log_probability[:, 1] + (1 - head) * log_probability[:, 0])
         boundary.append(weighted_mean(ce, weight * trust))
         region.append(weighted_mean(ce, (1 - weight) * trust))
     stats = dict(valid_images=float(valid.sum()), band_fraction=band[valid].mean().item())
+    for index, loss_boundary, loss_region in zip(PROBE_HEADS, boundary, region):
+        stats[f"loss_bd_h{index}"], stats[f"loss_rg_h{index}"] = loss_boundary.item(), loss_region.item()
     return torch.stack(boundary).mean(), torch.stack(region).mean(), stats
 
 
-def labeled_probes(outputs, labels, radius):
+def labeled_probes(outputs, labels, radius, coarse_target="nearest"):
     """GT target with unit confidence (labeled stream, and the unlabeled oracle)."""
     band = boundary_band(labels, radius)
-    return band_probes(outputs, labels, band, torch.ones_like(band))
+    return band_probes(outputs, labels, band, torch.ones_like(band), coarse_target)
 
 
-def pseudo_label_probes(outputs, teacher_outputs, radius):
+def pseudo_label_probes(outputs, teacher_outputs, radius, coarse_target="nearest"):
     """Teacher hard pseudo-label target, weighted by the Teacher's full-resolution confidence."""
     probability = teacher_outputs[-1].detach().softmax(dim=1)
     confidence, pseudo = probability.max(dim=1)
     band = boundary_band(pseudo, radius)
-    probe = band_probes(outputs, pseudo, band, confidence)
+    probe = band_probes(outputs, pseudo, band, confidence, coarse_target)
     if probe is not None:
         probe[2]["band_confidence"] = (weighted_mean(confidence, band).item()
                                        if band.any() else math.nan)
@@ -159,9 +174,12 @@ class CBCTracker:
     any correlation between EMA rankings.
     """
 
-    def __init__(self, max_iterations, band_radius=2, top_fraction=0.25,
+    def __init__(self, max_iterations, band_radius=2, top_fraction=0.25, coarse_target="nearest",
                  momentum_low=0.5, momentum_high=0.99, lag_logs=10, dump_interval=500):
+        if coarse_target not in COARSE_TARGETS:
+            raise ValueError(f"Unknown coarse target {coarse_target}")
         self.max_iterations, self.band_radius = max_iterations, band_radius
+        self.coarse_target = coarse_target
         self.top_fraction, self.dump_interval = top_fraction, dump_interval
         self.momentum_low, self.momentum_high = momentum_low, momentum_high
         self.ema, self.halves, self.previous, self.window, self.count = {}, ({}, {}), {}, {}, {}
@@ -202,11 +220,12 @@ class CBCTracker:
     def observe(self, iteration, labeled_outputs, labels, labeled_taps,
                 unlabeled_outputs, teacher_outputs, unlabeled_taps, oracle_labels=None):
         """oracle_labels: hidden GT of the unlabeled images, used for logging only."""
-        pseudo, pseudo_band = pseudo_label_probes(unlabeled_outputs, teacher_outputs, self.band_radius)
-        streams = dict(lab=(labeled_probes(labeled_outputs, labels, self.band_radius), labeled_taps),
+        radius, target = self.band_radius, self.coarse_target
+        pseudo, pseudo_band = pseudo_label_probes(unlabeled_outputs, teacher_outputs, radius, target)
+        streams = dict(lab=(labeled_probes(labeled_outputs, labels, radius, target), labeled_taps),
                        unl=(pseudo, unlabeled_taps))
         if oracle_labels is not None:
-            streams["orc"] = (labeled_probes(unlabeled_outputs, oracle_labels, self.band_radius),
+            streams["orc"] = (labeled_probes(unlabeled_outputs, oracle_labels, radius, target),
                               unlabeled_taps)
             self._accumulate("unl_band_iou_gt", band_iou(
                 pseudo_band, boundary_band(oracle_labels, self.band_radius)))
@@ -238,7 +257,8 @@ class CBCTracker:
             res = {}
             for stream in STREAMS:
                 for name in ("skipped", "valid_images", "loss_bd", "loss_rg", "band_fraction",
-                             "band_confidence"):
+                             "band_confidence", *(f"loss_{kind}_h{index}" for kind in KINDS
+                                                  for index in PROBE_HEADS)):
                     row[f"{stream}_{name}"] = window.get(f"{stream}_{name}", math.nan)
                 for name in ("raw_cos_bd_rg", "raw_rho", "raw_jaccard"):
                     row[f"{stream}_{name}"] = window.get(f"{tap}/{stream}_{name}", math.nan)

@@ -6,7 +6,11 @@ memory; the launcher exits once every job is started.
 
   step1    observation only (CBC; Teacher-MSE unlabeled probe in the code of that time)
   step1b   observation only, pseudo-label CE unlabeled probe and oracle logging
+           (LA runs used the soft coarse-head target; later runs the nearest one)
+  step1c   observation only, gain-free probes (hard / full-resolution / D2 contrast) and oracle
   step2    random channel dropout of the unlabeled D2 tap (p=0.5, weight 1)
+  step2_p0 control for step2: the same second D2 tail pass and consistency, no channel
+           dropped (p=0), separating the perturbation from the extra consistency term
 """
 import argparse
 from datetime import datetime
@@ -29,7 +33,10 @@ COPIED = ("max_iterations", "warmup_iterations", "base_lr", "ema_decay", "consis
 STEPS = {
     "step1": ("Results_step1", ["--val_interval", "0", "--cbc_interval", "5"]),
     "step1b": ("Results_step1b", ["--val_interval", "0", "--cbc_interval", "5", "--cbc_oracle"]),
+    "step1c": ("Results_step1c", ["--val_interval", "0", "--cbc_interval", "5", "--cbc_oracle",
+                                  "--cbc_tracker", "1c"]),
     "step2": ("Results_step2/random_d2_p0.5", ["--fp_tap", "d2", "--fp_drop", "0.5", "--fp_weight", "1.0"]),
+    "step2_p0": ("Results_step2/nodrop_d2_p0", ["--fp_tap", "d2", "--fp_drop", "0.0", "--fp_weight", "1.0"]),
 }
 
 

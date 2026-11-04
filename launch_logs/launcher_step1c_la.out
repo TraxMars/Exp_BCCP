@@ -1,0 +1,3 @@
+step1c MT_DS LA: GPU=3 PID=4017476
+step1c MT_DS_LossNorm LA: GPU=2 PID=4033070
+All runs launched; manifest: /aita_data/home/aita_duanxuelong/Exp_BCCP/launch_logs/step1c_20261103_155913/manifest.json

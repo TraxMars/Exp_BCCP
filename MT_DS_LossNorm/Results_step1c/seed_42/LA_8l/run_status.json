@@ -1,0 +1,12 @@
+{
+  "dataset": "LA",
+  "labelnum": 8,
+  "seed": 42,
+  "gpu": "2",
+  "pid": 4033070,
+  "max_iterations": 15000,
+  "state": "completed",
+  "iteration": 15000,
+  "updated_at": "2026-11-03T18:41:17+08:00",
+  "best_dice": null
+}
