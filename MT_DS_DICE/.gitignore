@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pth
+*.pth.tmp
+
+# Results*/: keep only the small records (metrics, validation, test, config); weights and logs stay local.
+Results*/**
+!Results*/**/
+!Results*/**/*.csv
+!Results*/**/*.jsonl
+!Results*/**/*.json

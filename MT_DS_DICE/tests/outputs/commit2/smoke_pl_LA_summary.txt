@@ -1,0 +1,25 @@
+# Smoke: --consistency_type pseudo_ce_dice, LA, seed 42, --warmup_iterations 100, 300 iterations
+all training losses finite: True
+all diagnostics finite: True
+after warmup: L_sup 0.129-0.307, L_pl 0.096-0.293 (ce 0.066-0.269, dice 0.125-0.361), median L_pl/L_sup 0.93, 0.3*L_pl/L_sup 0.28
+total gradient norm, iterations (50, 100]: median 0.959, range 0.760-2.944 (5 logged rows)
+total gradient norm, iterations (100, 150]: median 1.245, range 0.842-1.651 (5 logged rows)
+total gradient norm, iterations (150, 300]: median 1.194, range 0.613-2.756 (15 logged rows)
+
+gradient probes (0.3*L_cons at constant 0.3, also before warmup):
+iter | |g_sup| b7 | |g_pl| b7 | ratio | cos b7 | |g_sup| b3 | |g_pl| b3 | ratio | cos b3
+  50 | 0.0495 | 0.0136 | 0.28 | -0.035 | 0.2570 | 0.1089 | 0.42 | +0.528
+ 100 | 0.0537 | 0.0412 | 0.77 | +0.107 | 0.2640 | 0.1366 | 0.52 | +0.281
+ 150 | 0.0884 | 0.0475 | 0.54 | -0.777 | 0.5060 | 0.1027 | 0.20 | -0.295
+ 200 | 0.0589 | 0.0337 | 0.57 | -0.658 | 0.2349 | 0.0978 | 0.42 | +0.147
+ 250 | 0.0517 | 0.0774 | 1.50 | +0.361 | 0.2446 | 0.7008 | 2.86 | +0.366
+ 300 | 0.0430 | 0.0329 | 0.76 | +0.391 | 0.1539 | 0.1003 | 0.65 | +0.244
+
+boundary (full-resolution head, GT band radius 2):
+iter | CE pl in | CE gt in | CE pl out | CE gt out | band IoU | conf GT band | conf PL band
+  50 | 0.683 | 0.652 | 0.463 | 0.359 | 0.119 | 0.616 | 0.642
+ 100 | 0.826 | 0.927 | 0.550 | 0.330 | 0.113 | 0.687 | 0.683
+ 150 | 0.361 | 0.686 | 0.263 | 0.209 | 0.108 | 0.632 | 0.648
+ 200 | 0.250 | 1.175 | 0.297 | 0.181 | 0.110 | 0.773 | 0.689
+ 250 | 0.847 | 1.037 | 0.285 | 0.286 | 0.291 | 0.759 | 0.724
+ 300 | 0.456 | 1.013 | 0.078 | 0.100 | 0.243 | 0.797 | 0.779

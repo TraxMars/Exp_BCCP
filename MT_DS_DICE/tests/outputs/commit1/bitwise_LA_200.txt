@@ -1,0 +1,55 @@
+# Reference: /aita_data/home/aita_duanxuelong/Exp_BCCP/PlanA_BCCP/MT_DS/Results_step1b/seed_42/LA_8l/training_metrics.csv (old code, seed 42, LA_8l, step1b run; observation-only CBC)
+# Columns: loss_supervised ce dice loss_consistency gradient_norm, iterations 1..200 (21 logged rows)
+
+## c1_mse_LA (new code, GPU 3)
+mismatch iteration=80 ce: 0.2097110003232956 vs 0.20971103012561798
+FAIL: 21 logged iterations (1..200) x 5 columns, 1 mismatches
+-- without ce:
+PASS: 21 logged iterations (1..200) x 4 columns, 0 mismatches
+
+## c1_mse_LA_gpu5 (new code, GPU 5)
+mismatch iteration=10 ce: 0.6085249781608582 vs 0.6085249185562134
+mismatch iteration=80 ce: 0.2097110003232956 vs 0.20971103012561798
+FAIL: 21 logged iterations (1..200) x 5 columns, 2 mismatches
+-- without ce:
+PASS: 21 logged iterations (1..200) x 4 columns, 0 mismatches
+
+## old_mse_LA_gpu4 (OLD code re-run (control), GPU 4)
+mismatch iteration=10 ce: 0.6085249781608582 vs 0.6085249185562134
+mismatch iteration=40 loss_supervised: 0.4146590232849121 vs 0.4146590530872345
+mismatch iteration=40 ce: 0.3100866973400116 vs 0.310086727142334
+mismatch iteration=60 loss_supervised: 0.398347407579422 vs 0.3983474373817444
+mismatch iteration=60 ce: 0.31680864095687866 vs 0.31680867075920105
+mismatch iteration=140 loss_supervised: 0.24181102216243744 vs 0.24181103706359863
+mismatch iteration=140 ce: 0.18564245104789734 vs 0.18564248085021973
+mismatch iteration=150 ce: 0.15590691566467285 vs 0.15590693056583405
+FAIL: 21 logged iterations (1..200) x 5 columns, 8 mismatches
+-- without ce:
+mismatch iteration=40 loss_supervised: 0.4146590232849121 vs 0.4146590530872345
+mismatch iteration=60 loss_supervised: 0.398347407579422 vs 0.3983474373817444
+mismatch iteration=140 loss_supervised: 0.24181102216243744 vs 0.24181103706359863
+FAIL: 21 logged iterations (1..200) x 4 columns, 3 mismatches
+
+# LossNorm reference: /aita_data/home/aita_duanxuelong/Exp_BCCP/PlanA_BCCP/MT_DS_LossNorm/Results_step1b/seed_42/LA_8l/training_metrics.csv
+
+## c1_lossnorm_LA (new --loss_norm, GPU 5)
+mismatch iteration=20 dice: 0.5980398058891296 vs 0.6001383662223816
+mismatch iteration=20 loss_consistency: 0.0322403758764267 vs 0.03199070319533348
+mismatch iteration=20 gradient_norm: 2.0211527347564697 vs 2.078214168548584
+FAIL: 21 logged iterations (1..200) x 5 columns, 100 mismatches
+
+## c1_lossnorm_LA_gpu3 (new --loss_norm, GPU 3)
+mismatch iteration=20 dice: 0.5980398058891296 vs 0.6007785797119141
+mismatch iteration=20 loss_consistency: 0.0322403758764267 vs 0.03240586817264557
+mismatch iteration=20 gradient_norm: 2.0211527347564697 vs 2.094177722930908
+FAIL: 21 logged iterations (1..200) x 5 columns, 100 mismatches
+
+## old_lossnorm_LA_gpu5 (OLD MT_DS_LossNorm code re-run (control), GPU 5)
+mismatch iteration=20 dice: 0.5980398058891296 vs 0.5981540679931641
+mismatch iteration=20 loss_consistency: 0.0322403758764267 vs 0.03195016831159592
+mismatch iteration=20 gradient_norm: 2.0211527347564697 vs 1.966356635093689
+FAIL: 21 logged iterations (1..200) x 5 columns, 100 mismatches
+
+## iteration 1 (identical start) of all LossNorm runs vs reference
+PASS: 1 logged iterations (1..1) x 5 columns, 0 mismatches
+PASS: 1 logged iterations (1..1) x 5 columns, 0 mismatches

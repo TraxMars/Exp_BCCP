@@ -1,0 +1,44 @@
+# Diagnostics zero-interference: MT_DS (--consistency_type mse), LA, seed 42, iterations 1..100
+# diag_off = --diag_interval 0 (two independent runs); diag_50 = default; diag_1 = diagnostics at every iteration
+
+## columns: dice loss_consistency consistency_weight gradient_norm
+-- diag_off vs diag_off_b:
+PASS: 11 logged iterations (1..100) x 4 columns, 0 mismatches
+-- diag_off vs diag_50:
+PASS: 11 logged iterations (1..100) x 4 columns, 0 mismatches
+-- diag_off vs diag_1:
+PASS: 11 logged iterations (1..100) x 4 columns, 0 mismatches
+
+## columns: loss_supervised ce dice loss_consistency consistency_weight loss_total gradient_norm
+-- diag_off vs diag_off_b:
+mismatch iteration=10 ce: 0.6085249185562134 vs 0.6085249781608582
+mismatch iteration=40 loss_supervised: 0.4146590232849121 vs 0.4146590530872345
+mismatch iteration=40 ce: 0.3100866973400116 vs 0.310086727142334
+mismatch iteration=40 loss_total: 0.4146590232849121 vs 0.4146590530872345
+mismatch iteration=80 ce: 0.20971103012561798 vs 0.2097110003232956
+mismatch iteration=100 ce: 0.20200635492801666 vs 0.20200636982917786
+FAIL: 11 logged iterations (1..100) x 7 columns, 6 mismatches
+-- diag_off vs diag_50:
+mismatch iteration=10 ce: 0.6085249185562134 vs 0.6085249781608582
+mismatch iteration=40 loss_supervised: 0.4146590232849121 vs 0.4146590530872345
+mismatch iteration=40 ce: 0.3100866973400116 vs 0.310086727142334
+mismatch iteration=40 loss_total: 0.4146590232849121 vs 0.4146590530872345
+mismatch iteration=100 ce: 0.20200635492801666 vs 0.20200636982917786
+FAIL: 11 logged iterations (1..100) x 7 columns, 5 mismatches
+-- diag_off vs diag_1:
+mismatch iteration=40 loss_supervised: 0.4146590232849121 vs 0.4146590530872345
+mismatch iteration=40 ce: 0.3100866973400116 vs 0.310086727142334
+mismatch iteration=40 loss_total: 0.4146590232849121 vs 0.4146590530872345
+mismatch iteration=100 ce: 0.20200635492801666 vs 0.20200636982917786
+FAIL: 11 logged iterations (1..100) x 7 columns, 4 mismatches
+
+## diag_50 (commit-2 code, mse) vs the step1b reference log
+mismatch iteration=40 loss_supervised: 0.4146590232849121 vs 0.4146590530872345
+mismatch iteration=40 ce: 0.3100866973400116 vs 0.310086727142334
+mismatch iteration=80 ce: 0.2097110003232956 vs 0.20971103012561798
+FAIL: 11 logged iterations (1..100) x 5 columns, 3 mismatches
+-- without CE-derived columns:
+PASS: 11 logged iterations (1..100) x 3 columns, 0 mismatches
+
+## diagnostics.csv rows at iterations ['50', '100']: diag_50 vs diag_1
+PASS: 2 rows x 15 columns, 0 mismatches []
