@@ -1,4 +1,4 @@
-"""Deep-supervised CE + Dice, EMA-teacher consistency (MSE or pseudo-label) and optional LossNorm."""
+"""Deep-supervised CE + Dice for the labeled GT and for the EMA Teacher's pseudo-labels."""
 import torch
 import torch.nn.functional as F
 
@@ -22,21 +22,9 @@ def supervised_loss(outputs, labels):
         for output in outputs])
 
 
-def consistency_loss(student_outputs, teacher_outputs):
-    return torch.stack([
-        F.mse_loss(student.softmax(dim=1), teacher.detach().softmax(dim=1))
-        for student, teacher in zip(student_outputs, teacher_outputs, strict=True)
-    ]).mean()
-
-
 def pseudo_label_consistency(student_outputs, teacher_outputs):
     """DuCiSC's pseudo-label loss without its dynamic-threshold mask: each scale's own Teacher argmax."""
     return deep_ce_dice(student_outputs, [teacher.detach().argmax(dim=1) for teacher in teacher_outputs])
-
-
-def normalize_loss(loss, eps=1e-8):
-    # L / L.detach(), with a floor solely to avoid a zero denominator.
-    return loss / loss.detach().clamp_min(eps)
 
 
 @torch.no_grad()

@@ -1,4 +1,7 @@
-"""Mean Teacher + four-scale deep supervision on DuCiSC's VNet; MSE or pseudo-label consistency, optional LossNorm.
+"""MT_DS_PL: Mean Teacher + four-scale deep supervision on DuCiSC's VNet with pseudo-label consistency.
+
+L = L_sup + 0.3 * L_pl from iteration 2000 (L_sup before), where both are the four-scale mean of
+(CE + Dice) / 2: L_sup to the nearest-neighbour GT, L_pl to each scale's own Teacher argmax.
 
 The GPU is chosen by the caller through CUDA_VISIBLE_DEVICES (scripts/launch.py sets it).
 """
@@ -18,10 +21,10 @@ import torch
 from torch.utils.data import DataLoader
 
 from data import SPECS, VolumeDataset, TwoStreamBatchSampler
-from diagnostics import boundary_diagnostics, gradient_diagnostics
-from evaluate import evaluate
+from diagnostics import boundary_diagnostics, gradient_diagnostics, labeled_band_ce
+from evaluate import ducisc_line, evaluate
 from networks import VNetDS
-from objectives import consistency_loss, normalize_loss, pseudo_label_consistency, supervised_loss, update_ema
+from objectives import pseudo_label_consistency, supervised_loss, update_ema
 
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -39,13 +42,10 @@ def arguments():
                           ("consistency", 0.3), ("num_workers", 2), ("cpu_threads", 4), ("log_interval", 10),
                           ("val_interval", 200), ("val_start", 800), ("checkpoint_interval", 1000)):
         parser.add_argument(f"--{name}", type=type(default), default=default)
-    # mse: softmax MSE to the Teacher; pseudo_ce_dice: (CE + Dice) / 2 to the Teacher argmax of each scale.
-    parser.add_argument("--consistency_type", choices=["mse", "pseudo_ce_dice"], default="mse")
-    # Divide the supervised and consistency objectives each by their detached value.
-    parser.add_argument("--loss_norm", action="store_true")
     # Logging-only diagnostics (diagnostics.csv) every N iterations; 0 disables them.
     parser.add_argument("--diag_interval", type=int, default=50)
-    parser.add_argument("--persistent_workers", action=argparse.BooleanOptionalAction, default=False)
+    # Keep the training volumes in memory (sampling and augmentation are unchanged).
+    parser.add_argument("--cache_volumes", action=argparse.BooleanOptionalAction, default=True)
     # Resuming restores the configuration stored in the checkpoint; other arguments are ignored.
     parser.add_argument("--resume", type=Path)
     parser.add_argument("--patch_size", nargs=3, type=int)
@@ -78,7 +78,7 @@ def train(args):
     root = args.data_root / spec["directory"]
     args.labelnum = args.labelnum if args.labelnum is not None else spec["labels"]
     args.patch_size = list(args.patch_size or spec["patch"])
-    dataset = VolumeDataset(root, args.dataset, args.patch_size)
+    dataset = VolumeDataset(root, args.dataset, args.patch_size, cache=args.cache_volumes)
     if not args.labeled_bs <= args.labelnum <= len(dataset) - (args.batch_size - args.labeled_bs):
         raise ValueError("Invalid labeled count for this dataset/batch size")
     sampler = TwoStreamBatchSampler(list(range(args.labelnum)), list(range(args.labelnum, len(dataset))),
@@ -105,6 +105,9 @@ def train(args):
         teacher.load_state_dict(checkpoint["teacher"])
         optimizer.load_state_dict(checkpoint["optimizer"])
         iteration, best_dice = checkpoint["iteration"], checkpoint["best_dice"]
+        if (args.output_dir / "best_metrics.json").is_file():
+            # best_model.pth may be newer than the last periodic checkpoint.
+            best_dice = max(best_dice, json.loads((args.output_dir / "best_metrics.json").read_text())["dice"])
         random.setstate(checkpoint["python_rng"])
         np.random.set_state(checkpoint["numpy_rng"])
         torch.set_rng_state(checkpoint["torch_rng"])
@@ -117,8 +120,7 @@ def train(args):
                         handlers=[logging.FileHandler(args.output_dir / "log.txt"), logging.StreamHandler(sys.stdout)])
     logging.info("config: %s", config)
     loader = DataLoader(dataset, batch_sampler=sampler, num_workers=args.num_workers,
-                        pin_memory=args.device == "cuda", worker_init_fn=worker_init,
-                        persistent_workers=args.persistent_workers and args.num_workers > 0)
+                        pin_memory=args.device == "cuda", worker_init_fn=worker_init)
 
     def save_checkpoint():
         torch.save(dict(student=student.state_dict(), teacher=teacher.state_dict(),
@@ -130,7 +132,7 @@ def train(args):
         (args.output_dir / "last_checkpoint.pth.tmp").replace(args.output_dir / "last_checkpoint.pth")
 
     start, data_wait = time.monotonic(), 0.0
-    fields = ["iteration", "loss_supervised", "ce", "dice", "loss_consistency", "pl_ce", "pl_dice",
+    fields = ["iteration", "loss_supervised", "ce", "dice", "loss_pl", "pl_ce", "pl_dice",
               "consistency_weight", "loss_total", "gradient_norm", "lr", "peak_memory_mib", "elapsed_seconds",
               "data_wait_seconds"]
     with (args.output_dir / "training_metrics.csv").open("a", newline="", buffering=1) as handle, \
@@ -152,28 +154,29 @@ def train(args):
                 loss_sup, ce, dice = supervised_loss(supervised_outputs, labels)
                 with torch.no_grad():
                     teacher_outputs = teacher(images[args.labeled_bs:], deepsup=True)
-                if args.consistency_type == "mse":
-                    loss_cons, pl_ce, pl_dice = consistency_loss(unlabeled_outputs, teacher_outputs), None, None
-                else:
-                    loss_cons, pl_ce, pl_dice = pseudo_label_consistency(unlabeled_outputs, teacher_outputs)
+                loss_pl, pl_ce, pl_dice = pseudo_label_consistency(unlabeled_outputs, teacher_outputs)
                 weight = args.consistency if iteration >= args.warmup_iterations else 0.0
-                norm = normalize_loss if args.loss_norm else (lambda loss: loss)
-                loss = norm(loss_sup)
+                loss = loss_sup
                 if weight > 0:
-                    loss = loss + weight * norm(loss_cons)
-                if not torch.isfinite(torch.stack([loss_sup, loss_cons, loss])).all():
-                    raise FloatingPointError("Nonfinite supervised/consistency/total loss")
+                    loss = loss + weight * loss_pl
+                if not torch.isfinite(torch.stack([loss_sup, loss_pl, loss])).all():
+                    raise FloatingPointError("Nonfinite supervised/pseudo-label/total loss")
                 optimizer.zero_grad(set_to_none=True)
                 if args.diag_interval and (iteration + 1) % args.diag_interval == 0:
+                    # The hidden GT of the unlabeled images is read only here, after the objective is built.
+                    # It enters only L_true, an oracle that is differentiated by autograd.grad for the
+                    # logged floats and then dropped, and a no_grad boundary function.
+                    hidden = batch["label"][args.labeled_bs:].to(args.device)
+                    loss_true = supervised_loss(unlabeled_outputs, hidden)[0]
                     probe = dict(iteration=iteration + 1, **gradient_diagnostics(
-                        loss_sup, args.consistency * loss_cons,
-                        dict(b7=student.block_seven.conv[-3].weight, b3=student.block_three.conv[-3].weight)))
+                        loss_sup, args.consistency * loss_pl,
+                        dict(b7=student.block_seven.conv[-3].weight, b3=student.block_three.conv[-3].weight),
+                        loss_true))
+                    del loss_true
                     if any(parameter.grad is not None for parameter in student.parameters()):
                         raise RuntimeError("Gradient diagnostics wrote parameter gradients")
-                    # The hidden GT of the unlabeled images is read only here, after the objective is built,
-                    # and only by a no_grad function that returns floats.
-                    hidden = batch["label"][args.labeled_bs:].to(args.device)
                     probe.update(boundary_diagnostics(unlabeled_outputs[-1], teacher_outputs[-1], hidden))
+                    probe.update(labeled_band_ce(supervised_outputs[-1], labels))
                     if not all(isinstance(value, (int, float)) for value in probe.values()):
                         raise RuntimeError("Diagnostics must return plain numbers")
                     if diagnostics is None:
@@ -190,15 +193,14 @@ def train(args):
                 if iteration == 1 or iteration % args.log_interval == 0 or iteration == args.max_iterations:
                     peak = torch.cuda.max_memory_allocated() / 2**20 if args.device == "cuda" else 0
                     row = dict(iteration=iteration, loss_supervised=loss_sup.item(), ce=ce.item(), dice=dice.item(),
-                               loss_consistency=loss_cons.item(),
-                               pl_ce=None if pl_ce is None else pl_ce.item(),
-                               pl_dice=None if pl_dice is None else pl_dice.item(), consistency_weight=weight, loss_total=loss.item(),
+                               loss_pl=loss_pl.item(), pl_ce=pl_ce.item(), pl_dice=pl_dice.item(),
+                               consistency_weight=weight, loss_total=loss.item(),
                                gradient_norm=gradient_norm.item(), lr=optimizer.param_groups[0]["lr"],
                                peak_memory_mib=peak, elapsed_seconds=time.monotonic() - start,
                                data_wait_seconds=data_wait)
                     metrics.writerow(row)
-                    logging.info("iteration %d: sup=%.6f cons=%.6f weight=%.3f grad=%.4f memory=%.0fMiB", iteration,
-                                 row["loss_supervised"], row["loss_consistency"], weight, row["gradient_norm"], peak)
+                    logging.info("iteration %d: sup=%.6f pl=%.6f weight=%.3f grad=%.4f memory=%.0fMiB", iteration,
+                                 row["loss_supervised"], row["loss_pl"], weight, row["gradient_norm"], peak)
                 if args.val_interval and iteration >= args.val_start and iteration % args.val_interval == 0:
                     result = dict(evaluate(student, root, args.dataset, args.patch_size, args.device), iteration=iteration)
                     with (args.output_dir / "validation_metrics.jsonl").open("a") as validation_log:
@@ -216,8 +218,10 @@ def train(args):
     if (args.output_dir / "best_model.pth").is_file():
         student.load_state_dict(torch.load(args.output_dir / "best_model.pth", map_location=args.device,
                                            weights_only=True))
-        result = evaluate(student, root, args.dataset, args.patch_size, args.device, split="test")
+        # Main result without post-processing (DuCiSC's default nms=0); "nms1" adds getLargestCC.
+        result = evaluate(student, root, args.dataset, args.patch_size, args.device, split="test", nms1=True)
         (args.output_dir / "test_metrics.json").write_text(json.dumps(result, indent=2) + "\n")
+        logging.info("test nms0: %s | nms1: %s", ducisc_line(result), ducisc_line(result["nms1"]))
     logging.info("finished at iteration %d, best validation Dice %.6f", iteration, best_dice)
 
 

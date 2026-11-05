@@ -1,10 +1,12 @@
 """Queue training runs over datasets x seeds; start each one when a GPU has enough free memory.
 
   python scripts/launch.py --datasets LA Pancreas --seeds 42 500 1337 \\
-      --output_root Results_baseline_pl -- --consistency_type pseudo_ce_dice
+      --output_root Results_baseline_pl
 
 Each run writes <output_root>/seed_<s>/<dataset>_<labelnum>l. Arguments after `--` are passed to
 code/train.py unchanged. The launcher returns once every run has started; runs are detached.
+It refuses to start unless the working tree is clean (ignored Results* excepted), so every run's
+git_commit names a committed state of the code.
 """
 import argparse
 from datetime import datetime
@@ -26,6 +28,17 @@ def free_memory():
     return {int(index): int(free) for index, free in (row.split(",") for row in raw.splitlines())}
 
 
+def git(*arguments):
+    return subprocess.run(["git", *arguments], cwd=PROJECT, capture_output=True, text=True, check=True).stdout.strip()
+
+
+def check_traceable():
+    dirty = git("status", "--porcelain")
+    if dirty:
+        raise SystemExit(f"Refusing to launch: uncommitted changes in {PROJECT}:\n{dirty}")
+    return git("rev-parse", "HEAD")
+
+
 def main():
     argv = sys.argv[1:]
     extra = argv[argv.index("--") + 1:] if "--" in argv else []
@@ -41,6 +54,8 @@ def main():
                         help="Wait after a start so the run reaches its peak memory before the next placement")
     parser.add_argument("--dry_run", action="store_true")
     args = parser.parse_args(argv[:argv.index("--")] if "--" in argv else argv)
+    head = check_traceable()
+    print(f"code: {head} (clean)", flush=True)
     root = (args.output_root if args.output_root.is_absolute() else PROJECT / args.output_root).resolve()
     jobs = []
     for seed in args.seeds:

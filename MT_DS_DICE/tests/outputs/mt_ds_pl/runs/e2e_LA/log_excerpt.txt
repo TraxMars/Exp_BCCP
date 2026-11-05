@@ -1,0 +1,26 @@
+2026-11-05 17:41:33,698 config: {'args': {'dataset': 'LA', 'data_root': '/aita_data/home/aita_duanxuelong/Dataset', 'output_dir': '<scratch>/e2e_LA/seed_42/LA_8l', 'labelnum': 8, 'device': 'cuda', 'seed': 42, 'batch_size': 4, 'labeled_bs': 2, 'max_iterations': 200, 'warmup_iterations': 100, 'base_lr': 0.01, 'ema_decay': 0.99, 'consistency': 0.3, 'num_workers': 2, 'cpu_threads': 4, 'log_interval': 
+2026-11-05 17:41:35,119 iteration 1: sup=0.754483 pl=0.490127 weight=0.000 grad=1.5064 memory=3993MiB
+2026-11-05 17:41:38,653 iteration 10: sup=0.670268 pl=0.537686 weight=0.000 grad=1.3418 memory=5704MiB
+2026-11-05 17:41:42,460 iteration 20: sup=0.518730 pl=0.463885 weight=0.000 grad=1.0562 memory=5704MiB
+2026-11-05 17:41:46,779 iteration 30: sup=0.445394 pl=0.383745 weight=0.000 grad=0.8932 memory=5704MiB
+2026-11-05 17:41:50,678 iteration 40: sup=0.414659 pl=0.353296 weight=0.000 grad=0.7906 memory=5704MiB
+2026-11-05 17:41:55,269 iteration 50: sup=0.377589 pl=0.321619 weight=0.000 grad=1.0377 memory=5704MiB
+2026-11-05 17:41:58,448 iteration 60: sup=0.398347 pl=0.322510 weight=0.000 grad=2.9440 memory=5717MiB
+2026-11-05 17:42:01,556 iteration 70: sup=0.326144 pl=0.312217 weight=0.000 grad=0.8394 memory=5718MiB
+2026-11-05 17:42:04,625 iteration 80: sup=0.335970 pl=0.339821 weight=0.000 grad=0.9587 memory=5718MiB
+2026-11-05 17:42:07,706 iteration 90: sup=0.299379 pl=0.316358 weight=0.000 grad=0.7599 memory=5718MiB
+2026-11-05 17:42:10,905 iteration 100: sup=0.280805 pl=0.300071 weight=0.000 grad=1.1459 memory=5718MiB
+2026-11-05 17:43:04,918 validation iteration 100: Dice=0.577490
+2026-11-05 17:43:09,828 iteration 110: sup=0.307048 pl=0.284384 weight=0.300 grad=1.3192 memory=5718MiB
+2026-11-05 17:43:15,207 iteration 120: sup=0.257716 pl=0.276703 weight=0.300 grad=1.2449 memory=5718MiB
+2026-11-05 17:43:21,477 iteration 130: sup=0.216107 pl=0.247688 weight=0.300 grad=0.8421 memory=5718MiB
+2026-11-05 17:43:26,962 iteration 140: sup=0.241022 pl=0.169032 weight=0.300 grad=0.9404 memory=5718MiB
+2026-11-05 17:43:33,423 iteration 150: sup=0.271608 pl=0.201575 weight=0.300 grad=1.6509 memory=5718MiB
+2026-11-05 17:43:38,919 iteration 160: sup=0.200025 pl=0.227222 weight=0.300 grad=0.8185 memory=5718MiB
+2026-11-05 17:43:45,439 iteration 170: sup=0.194961 pl=0.166462 weight=0.300 grad=1.3907 memory=5718MiB
+2026-11-05 17:43:50,978 iteration 180: sup=0.227992 pl=0.129686 weight=0.300 grad=1.8705 memory=5718MiB
+2026-11-05 17:43:56,597 iteration 190: sup=0.180664 pl=0.163768 weight=0.300 grad=0.6131 memory=5718MiB
+2026-11-05 17:44:00,737 iteration 200: sup=0.184614 pl=0.173254 weight=0.300 grad=0.8729 memory=5718MiB
+2026-11-05 17:44:54,775 validation iteration 200: Dice=0.634717
+2026-11-05 17:46:04,649 test nms0: dice: 63.47(0.24), jc: 50.20(0.22), hd: 25.33(14.07), asd: 8.07(4.52) | nms1: dice: 63.21(0.25), jc: 50.32(0.23), hd: 30.82(30.05), asd: 5.76(3.65)
+2026-11-05 17:46:04,650 finished at iteration 200, best validation Dice 0.634717

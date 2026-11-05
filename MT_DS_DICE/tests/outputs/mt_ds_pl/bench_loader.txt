@@ -1,0 +1,12 @@
+# CUDA_VISIBLE_DEVICES=4 python tests/bench_loader.py --iterations 100 --repeats 2 (num_workers=2, shared node)
+LA        cache=False repeat=0: wait  11.80 s / loop  37.00 s = 31.9%; peak RSS main  1.59 GiB, PSS main+workers  1.65 GiB
+LA        cache=True  repeat=0: wait   5.90 s / loop  31.19 s = 18.9%; peak RSS main  2.54 GiB, PSS main+workers  2.52 GiB
+Pancreas  cache=False repeat=0: wait  70.82 s / loop  93.83 s = 75.5%; peak RSS main  1.60 GiB, PSS main+workers  1.63 GiB
+Pancreas  cache=True  repeat=0: wait   7.38 s / loop  30.98 s = 23.8%; peak RSS main  3.38 GiB, PSS main+workers  3.33 GiB
+LA        cache=False repeat=1: wait  11.81 s / loop  36.21 s = 32.6%; peak RSS main  1.61 GiB, PSS main+workers  1.75 GiB
+LA        cache=True  repeat=1: wait   5.77 s / loop  29.65 s = 19.4%; peak RSS main  2.54 GiB, PSS main+workers  2.66 GiB
+Pancreas  cache=False repeat=1: wait  68.32 s / loop  90.57 s = 75.4%; peak RSS main  1.63 GiB, PSS main+workers  1.79 GiB
+Pancreas  cache=True  repeat=1: wait   7.97 s / loop  31.14 s = 25.6%; peak RSS main  3.40 GiB, PSS main+workers  3.40 GiB
+
+LA: loop time 73.2 s -> 60.8 s (speed-up x1.20); wait share 32.2% -> 19.2%; peak PSS 1.75 -> 2.66 GiB, main RSS 1.61 -> 2.54 GiB
+Pancreas: loop time 184.4 s -> 62.1 s (speed-up x2.97); wait share 75.5% -> 24.7%; peak PSS 1.79 -> 3.40 GiB, main RSS 1.63 -> 3.40 GiB

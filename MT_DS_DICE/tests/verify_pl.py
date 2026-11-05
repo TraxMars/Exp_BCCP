@@ -7,6 +7,7 @@
   3. The hidden GT cannot change parameter gradients; the boundary band ignores patch borders.
 """
 import copy
+import math
 from pathlib import Path
 import sys
 
@@ -16,7 +17,7 @@ import torch
 PROJECT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT / "code"))
 sys.path.insert(0, str(PROJECT / "tests"))
-from diagnostics import boundary_band, boundary_diagnostics, gradient_diagnostics
+from diagnostics import boundary_band, boundary_diagnostics, gradient_diagnostics, labeled_band_ce
 from ducisc_reference import get_loss
 from networks import VNetDS
 from objectives import pseudo_label_consistency, supervised_loss
@@ -69,43 +70,53 @@ def check_gradient_diagnostics():
     with torch.no_grad():
         targets = teacher(images[2:] + 0.1, deepsup=True)
     loss_sup = supervised_loss(supervised, labels[:2])[0]
-    loss_cons = 0.3 * pseudo_label_consistency(unlabeled, targets)[0]
+    loss_pl = 0.3 * pseudo_label_consistency(unlabeled, targets)[0]
     parameters = {"b7": student.block_seven.conv[-3].weight, "b3": student.block_three.conv[-3].weight}
-    row = gradient_diagnostics(loss_sup, loss_cons, parameters)
+    row = gradient_diagnostics(loss_sup, loss_pl, parameters)
     assert all(parameter.grad is None for parameter in student.parameters())
     for name, parameter in parameters.items():
         loss_sup.backward(retain_graph=True)
         sup = parameter.grad.clone()
         student.zero_grad(set_to_none=True)
-        loss_cons.backward(retain_graph=True)
-        cons = parameter.grad.clone()
+        loss_pl.backward(retain_graph=True)
+        pl = parameter.grad.clone()
         student.zero_grad(set_to_none=True)
         torch.testing.assert_close(row[f"gnorm_sup_{name}"], sup.norm().item())
-        torch.testing.assert_close(row[f"gnorm_cons_{name}"], cons.norm().item())
+        torch.testing.assert_close(row[f"gnorm_pl_{name}"], pl.norm().item())
         torch.testing.assert_close(row[f"cos_{name}"],
-                                   torch.nn.functional.cosine_similarity(sup.flatten(), cons.flatten(), dim=0).item())
+                                   torch.nn.functional.cosine_similarity(sup.flatten(), pl.flatten(), dim=0).item())
     print(f"  {row}")
 
 
 def check_hidden_gt():
     images, labels = small_batch()
     model = VNetDS(has_dropout=False).train()
-    gradients = []
-    for hidden in (labels[2:], 1 - labels[2:]):
+    gradients, rows = [], []
+    for hidden in (labels[2:], 1 - labels[2:]):   # the hidden GT and its inverse
         state = copy.deepcopy(model.state_dict())
         supervised = model(images[:2], deepsup=True)
         unlabeled = model(images[2:], deepsup=True)
         with torch.no_grad():
             targets = model(images[2:] * 0.9, deepsup=True)
-        loss = supervised_loss(supervised, labels[:2])[0] + 0.3 * pseudo_label_consistency(unlabeled, targets)[0]
-        row = boundary_diagnostics(unlabeled[-1], targets[-1], hidden)
-        assert all(isinstance(value, float) for value in row.values())
+        loss_sup = supervised_loss(supervised, labels[:2])[0]
+        loss_pl = pseudo_label_consistency(unlabeled, targets)[0]
+        loss = loss_sup + 0.3 * loss_pl
         model.zero_grad(set_to_none=True)
+        # As in train.py: oracle L_true, gradient probes, then the no_grad boundary statistics.
+        row = gradient_diagnostics(loss_sup, 0.3 * loss_pl, dict(
+            b7=model.block_seven.conv[-3].weight, b3=model.block_three.conv[-3].weight),
+            supervised_loss(unlabeled, hidden)[0])
+        assert all(parameter.grad is None for parameter in model.parameters())
+        row.update(boundary_diagnostics(unlabeled[-1], targets[-1], hidden), **labeled_band_ce(supervised[-1], labels[:2]))
+        assert all(isinstance(value, float) for value in row.values())
         loss.backward()
         gradients.append([parameter.grad.clone() for parameter in model.parameters()])
+        rows.append(row)
         model.load_state_dict(state)
     for left, right in zip(*gradients):
         torch.testing.assert_close(left, right, rtol=0, atol=0)
+    # The oracle columns did see the GT (they change), the training gradient did not.
+    assert rows[0]["cos_pl_true_b7"] != rows[1]["cos_pl_true_b7"] and rows[0]["gnorm_pl_b7"] == rows[1]["gnorm_pl_b7"]
 
     mask = torch.zeros(1, 20, 20, 20, dtype=torch.long)
     mask[:, 5:15, 5:15, 5:15] = 1
@@ -113,6 +124,52 @@ def check_hidden_gt():
     assert band[0, 10, 10, 10] == 0 and band[0, 10, 10, 5] and band[0, 10, 10, 3] and not band[0, 10, 10, 2]
     full = torch.ones(1, 20, 20, 20, dtype=torch.long)
     assert not boundary_band(full, 2).any()
+
+
+def check_oracle_gradient_columns():
+    """Gradient-space oracle columns against an independent per-channel computation (scipy Spearman)."""
+    from scipy.stats import spearmanr
+    generator = torch.Generator().manual_seed(1)
+    weight = torch.randn(16, 8, 3, 3, 3, generator=generator, requires_grad=True)
+    g_sup, g_pl, g_true = (torch.randn(16, 8, 3, 3, 3, generator=generator) for _ in range(3))
+    row = gradient_diagnostics((weight * g_sup).sum(), (weight * g_pl).sum(), dict(w=weight), (weight * g_true).sum())
+    cos = torch.nn.functional.cosine_similarity
+    pl_sup = [cos(g_pl[c].flatten(), g_sup[c].flatten(), dim=0).item() for c in range(16)]
+    pl_true = [cos(g_pl[c].flatten(), g_true[c].flatten(), dim=0).item() for c in range(16)]
+    flagged = [b for a, b in zip(pl_sup, pl_true) if a < 0]
+    expected = dict(cos_pl_true_w=cos(g_pl.flatten(), g_true.flatten(), dim=0).item(),
+                    cos_sup_true_w=cos(g_sup.flatten(), g_true.flatten(), dim=0).item(),
+                    frac_ch_pl_true_neg_w=sum(v < 0 for v in pl_true) / 16, frac_ch_pl_sup_neg_w=sum(v < 0 for v in pl_sup) / 16,
+                    ch_rank_corr_w=spearmanr(pl_sup, pl_true).statistic,
+                    hit_rate_w=sum(v < 0 for v in flagged) / len(flagged))
+    for key, value in expected.items():
+        assert abs(row[key] - value) < 1e-5, (key, row[key], value)
+    assert weight.grad is None
+    same = gradient_diagnostics((weight * g_sup).sum(), (weight * g_sup).sum(), dict(w=weight), (weight * g_true).sum())
+    assert math.isnan(same["hit_rate_w"]) and same["frac_ch_pl_sup_neg_w"] == 0   # no channel with cos(pl, sup) < 0
+
+
+def check_new_columns():
+    """Hand-computed values of the error / confidence-split and labeled-band columns."""
+    hidden = torch.zeros(1, 12, 12, 12, dtype=torch.long)
+    hidden[:, 3:9, 3:9, 3:9] = 1
+    teacher = torch.zeros(1, 2, 12, 12, 12)
+    teacher[:, 1] = 10.0 * (2 * hidden - 1)              # correct, confidence ~1
+    teacher[:, 1, 3, 3:9, 3:9] = -0.1                     # one wrong face, confidence ~0.52
+    teacher[:, 1, 8, 3:9, 3:9] = -10.0                    # one wrong face, confidence ~1
+    band = boundary_band(hidden, 2)
+    pseudo = teacher.argmax(dim=1)
+    wrong = pseudo != hidden
+    row = boundary_diagnostics(torch.randn(1, 2, 12, 12, 12), teacher, hidden)
+    assert abs(row["teacher_err_gt_band"] - (wrong & band).sum().item() / band.sum().item()) < 1e-7
+    assert wrong.sum() == 72 and (wrong & band).sum() == 72
+    assert abs(row["conf_wrong_095"] - 0.5) < 1e-7 and row["conf_right_095"] == 1.0
+    logits = torch.zeros(1, 2, 12, 12, 12)
+    lab = labeled_band_ce(logits, hidden)
+    assert abs(lab["ce_lab_in"] - math.log(2)) < 1e-6 and abs(lab["ce_lab_out"] - math.log(2)) < 1e-6
+    empty = boundary_diagnostics(torch.randn(1, 2, 12, 12, 12), torch.zeros(1, 2, 12, 12, 12),
+                                 torch.zeros(1, 12, 12, 12, dtype=torch.long))
+    assert all(math.isnan(empty[key]) for key in ("ce_pl_in", "teacher_err_gt_band", "conf_wrong_095", "band_iou"))
 
 
 def main():
@@ -125,7 +182,14 @@ def main():
     check_gradient_diagnostics()
     print("PASS: probe norms / cosine equal separate backward passes; all parameter .grad stay None")
     check_hidden_gt()
-    print("PASS: hidden GT leaves parameter gradients bitwise unchanged; band = dilation - erosion, borders ignored")
+    print("PASS: inverting the hidden GT leaves all parameter gradients bitwise unchanged (it does change the oracle "
+          "columns); probes leave .grad None; band = dilation - erosion, borders ignored")
+    check_new_columns()
+    check_oracle_gradient_columns()
+    print("PASS: cos_pl_true / cos_sup_true / frac_ch_* / ch_rank_corr / hit_rate match an independent per-channel "
+          "computation (scipy Spearman); hit_rate is NaN without negative pl-sup channels")
+    print("PASS: teacher_err_gt_band / conf_wrong_095 / conf_right_095 / ce_lab_in / ce_lab_out match hand-computed "
+          "values; NaN when the patch has no foreground")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,13 @@
+weights: /aita_data/home/aita_duanxuelong/Baseline/MT_DS/Results/seed_42/LA_8l/best_model.pth
+  LA UPT6DX9IQY9JAZ7HJKA7: 249018 predicted voxels; mask equal=True; metrics equal=True [0.860042, 0.75445, 6.708204, 2.407275]; nms1 mask+metrics equal=True (kept 249006 of 249018 voxels)
+  LA UTBUJIWZMKP64E3N73YC: 241931 predicted voxels; mask equal=True; metrics equal=True [0.89075, 0.803021, 7.0, 1.585894]; nms1 mask+metrics equal=True (kept 240945 of 241931 voxels)
+  LA var_all_case averages [0.875396, 0.778735, 6.854102, 1.996585] == evaluate means: True
+  LA test_all_case nms=0: 'dice: 87.54(0.02), jc: 77.87(0.02), hd: 6.85(0.15), asd: 2.00(0.41)' == ours: True
+  LA test_all_case nms=1: 'dice: 87.45(0.01), jc: 77.72(0.02), hd: 7.96(1.26), asd: 1.97(0.43)' == ours: True
+  Pancreas image0050: 89584 predicted voxels; mask equal=True; metrics equal=True [0.00241, 0.001206, 95.545801, 69.662436]; nms1 mask+metrics equal=True (kept 34894 of 89584 voxels)
+  Pancreas image0059: 29389 predicted voxels; mask equal=True; metrics equal=True [0.001526, 0.000763, 55.226805, 45.455936]; nms1 mask+metrics equal=True (kept 28813 of 29389 voxels)
+  Pancreas var_all_case averages [0.001968, 0.000985, 75.386303, 57.559186] == evaluate means: True
+  Pancreas test_all_case nms=0: 'dice: 0.20(0.00), jc: 0.10(0.00), hd: 75.39(20.16), asd: 57.56(12.10)' == ours: True
+  Pancreas test_all_case nms=1: 'dice: 0.00(0.00), jc: 0.00(0.00), hd: 122.91(0.71), asd: 68.72(22.13)' == ours: True
+  synthetic empty prediction: zeros, counted in the mean, nms skipped: True
+PASS: masks, per-case metrics (nms 0 / 1), averages and summary lines match DuCiSC

@@ -1,0 +1,6 @@
+PASS: identical parameter names, order and seeded initial weights as the legacy VNetDS
+PASS: exact original predictions and parameter keys at all four scales
+PASS: the pseudo-label loss sends gradients only to the student
+PASS: supervised and pseudo-label gradients, all four heads, and first EMA update
+PASS: sliding-window overlap, padding and restored volume dimensions
+All core verification checks passed.

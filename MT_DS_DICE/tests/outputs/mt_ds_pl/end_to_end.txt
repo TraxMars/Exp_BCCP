@@ -1,0 +1,15 @@
+# End-to-end: LA, seed 42, --max_iterations 200 --warmup_iterations 100 --val_start 100 --val_interval 100 (runs/e2e_LA)
+validation: [(100, 0.57749, 0), (200, 0.634717, 0)] | best_metrics: 200 0.634717 (saved on strict improvement)
+test_metrics keys: ['asd', 'asd_std', 'cases', 'dice', 'dice_std', 'empty_prediction_cases', 'hd95', 'hd95_std', 'jc', 'jc_std', 'nms1', 'split']
+test nms0: dice 0.634717 jc 0.502026 hd95 25.3339 asd 8.0685 (std 0.2375), empty 0/20
+test nms1: dice 0.632107 jc 0.503201 hd95 30.8169 asd 5.7625 (std 0.2508), empty 0/20
+code/test.py --run_dir <run> --nms reproduces test_metrics.json exactly (all per-case values, nms0 + nms1): True
+
+# Resume (copy of the run, best_metrics.json dice set to 0.99, checkpoint best_dice 0.634717, max_iterations raised to 210)
+['finished at iteration 200, best validation Dice 0.634717', 'finished at iteration 210, best validation Dice 0.990000']
+
+# report.py de-duplication: duplicate jsonl line (iteration 100) and csv rows 1/10/20 appended to the resumed copy
+| seed | iters | best val Dice | @iter | last-5 val Dice | val Dice med 10k-15k | val HD95 med | val ASD med | test Dice | test JC | test HD95 | test ASD | worst-case Dice | empty pred. | nms1 Dice | nms1 HD95 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 42 | 210 | 63.47 | 200 | 60.61 | — | — | — | 63.47 | 50.20 | 25.33 | 8.07 | 0.00 | 0 | 63.21 | 30.82 |
+(iters = 210, last-5 val Dice = mean(57.75, 63.47) = 60.61; without de-duplication 59.66 and iters 20)

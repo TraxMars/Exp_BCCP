@@ -12,7 +12,7 @@ import numpy as np
 PROJECT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT / "code"))
 from networks import VNetDS
-from objectives import consistency_loss, normalize_loss, supervised_loss, update_ema
+from objectives import pseudo_label_consistency, supervised_loss, update_ema
 from evaluate import predict_volume
 
 
@@ -63,9 +63,9 @@ def main():
     # A teacher target passed with requires_grad must still be isolated by the loss.
     student_logits = [torch.randn(2, 2, 4, 4, 4, requires_grad=True)]
     teacher_logits = [torch.randn(2, 2, 4, 4, 4, requires_grad=True)]
-    consistency_loss(student_logits, teacher_logits).backward()
+    pseudo_label_consistency(student_logits, teacher_logits)[0].backward()
     assert student_logits[0].grad is not None and teacher_logits[0].grad is None
-    print("PASS: consistency sends gradients only to the student")
+    print("PASS: the pseudo-label loss sends gradients only to the student")
 
     model.train()
     teacher.train()
@@ -74,8 +74,7 @@ def main():
     with torch.no_grad():
         targets = teacher(inputs + 0.1, deepsup=True)
     supervised, _, _ = supervised_loss(outputs, labels)
-    consistency = consistency_loss(outputs, targets)
-    objective = supervised + 0.3 * consistency
+    objective = supervised + 0.3 * pseudo_label_consistency(outputs, targets)[0]
     objective.backward()
     for head in (model.out_conv, model.out_conv_2, model.out_conv_3, model.out_conv_4):
         assert head.weight.grad is not None and torch.isfinite(head.weight.grad).all()
@@ -86,17 +85,7 @@ def main():
     update_ema(model, teacher, 0.99, 0)
     for left, right in zip(model.parameters(), teacher.parameters()):
         torch.testing.assert_close(left, right, rtol=0, atol=0)
-    print("PASS: supervised and consistency gradients, all four heads, and first EMA update")
-
-    value = torch.tensor(2.0, requires_grad=True)
-    normalized = normalize_loss(value.square())
-    normalized.backward()
-    torch.testing.assert_close(normalized, torch.tensor(1.0))
-    torch.testing.assert_close(value.grad, torch.tensor(1.0))
-    zero = torch.tensor(0.0, requires_grad=True)
-    normalize_loss(zero.square()).backward()
-    assert torch.isfinite(zero.grad)
-    print("PASS: L/L.detach() retains gradients and the zero-loss safeguard is finite")
+    print("PASS: supervised and pseudo-label gradients, all four heads, and first EMA update")
 
     class SignModel(torch.nn.Module):
         def forward(self, image):

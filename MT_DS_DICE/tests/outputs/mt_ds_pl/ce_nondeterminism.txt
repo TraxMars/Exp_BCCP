@@ -1,0 +1,3 @@
+F.cross_entropy (mean), 200 repeats: 5 distinct values [0.9021230340003967, 0.9021230936050415, 0.9021231532096863, 0.902123212814331, 0.9021232724189758]
+F.cross_entropy(reduction='none').mean(), 200 repeats: 1 distinct values
+torch deterministic mode: nll_loss2d_forward_out_cuda_template does not have a deterministic implementation, but you set 'torch.use_deterministic_

@@ -1,0 +1,14 @@
+1. pseudo_label_consistency vs DuCiSC get_loss(if_pseudo=True, uncertain_area_all=None)
+  cpu trial 0: L_pl=0.76533228 reference=0.76533228 max|value diff|=0.000e+00 max|grad diff|=0.000e+00
+  cpu trial 1: L_pl=0.76482314 reference=0.76482314 max|value diff|=0.000e+00 max|grad diff|=0.000e+00
+  cpu trial 2: L_pl=0.76378375 reference=0.76378375 max|value diff|=0.000e+00 max|grad diff|=0.000e+00
+  cuda trial 0: L_pl=0.76533234 reference=0.76533228 max|value diff|=5.960e-08 max|grad diff|=0.000e+00
+  cuda trial 1: L_pl=0.76482314 reference=0.76482314 max|value diff|=0.000e+00 max|grad diff|=0.000e+00
+  cuda trial 2: L_pl=0.76378375 reference=0.76378375 max|value diff|=0.000e+00 max|grad diff|=0.000e+00
+PASS: values and student-output gradients agree within 1e-06; Teacher gets no gradient
+2. gradient_diagnostics
+  {'gnorm_sup_b7': 0.045231785625219345, 'gnorm_pl_b7': 0.007748746313154697, 'cos_b7': -0.08621411770582199, 'gnorm_sup_b3': 1.4986051321029663, 'gnorm_pl_b3': 0.3766503632068634, 'cos_b3': 0.000631796196103096}
+PASS: probe norms / cosine equal separate backward passes; all parameter .grad stay None
+PASS: inverting the hidden GT leaves all parameter gradients bitwise unchanged (it does change the oracle columns); probes leave .grad None; band = dilation - erosion, borders ignored
+PASS: cos_pl_true / cos_sup_true / frac_ch_* / ch_rank_corr / hit_rate match an independent per-channel computation (scipy Spearman); hit_rate is NaN without negative pl-sup channels
+PASS: teacher_err_gt_band / conf_wrong_095 / conf_right_095 / ce_lab_in / ce_lab_out match hand-computed values; NaN when the patch has no foreground

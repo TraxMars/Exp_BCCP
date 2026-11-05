@@ -1,0 +1,15 @@
+# E2 zero interference (PL): LA, seed 42, 100 iterations, --warmup_iterations 50 (L_pl in the objective from 50)
+# zi_off / zi_off_b = --diag_interval 0 (two runs: noise floor), zi_50 = default, zi_1 = every iteration
+
+## training_metrics.csv: zi_off vs zi_off_b
+PASS: 11 logged iterations (1..100); bitwise 5 columns: 0 mismatches; within 4.77e-07 relative 5 columns: 0 outside, max 1.33e-07
+
+## training_metrics.csv: zi_off vs zi_50
+PASS: 11 logged iterations (1..100); bitwise 5 columns: 0 mismatches; within 4.77e-07 relative 5 columns: 0 outside, max 1.33e-07
+
+## training_metrics.csv: zi_off vs zi_1
+PASS: 11 logged iterations (1..100); bitwise 5 columns: 0 mismatches; within 4.77e-07 relative 5 columns: 0 outside, max 1.33e-07
+
+## diagnostics.csv rows 50 and 100, all 31 columns (incl. oracle gradient / boundary / labeled): zi_50 vs zi_1
+PASS: 2 logged iterations (1..100); bitwise 31 columns: 0 mismatches
+zi_1 wrote 100 diagnostic rows (every iteration); zi_off wrote 0 lines

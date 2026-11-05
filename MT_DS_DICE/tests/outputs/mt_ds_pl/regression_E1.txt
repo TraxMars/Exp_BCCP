@@ -1,0 +1,31 @@
+# E1 regression: --warmup_iterations 100 --max_iterations 300 --val_interval 0 --seed 42 (step-0 settings)
+# ref0  = step-0 reference, code ae3ea95 (frozen worktree); ref0b = the same code run again (noise floor)
+# new   = this commit. CSVs in runs/. Columns renamed by this commit: loss_consistency -> loss_pl, gnorm_cons_* -> gnorm_pl_*.
+# Bitwise: dice pl_dice consistency_weight gradient_norm lr, and every original diagnostics column.
+# Within 4 float32 ULP (relative): ce pl_ce and the sums containing them (loss_supervised loss_pl loss_total);
+# the CUDA CE forward is not deterministic (ce_nondeterminism.txt), its gradient does not depend on that value.
+
+## LA: ref0 vs ref0b — training_metrics.csv
+PASS: 31 logged iterations (1..300); bitwise 5 columns: 0 mismatches; within 4.77e-07 relative 5 columns: 0 outside, max 2.24e-07
+## LA: ref0 vs ref0b — diagnostics.csv, original columns
+PASS: 6 logged iterations (1..300); bitwise 14 columns: 0 mismatches
+
+## LA: ref0 vs new — training_metrics.csv
+PASS: 31 logged iterations (1..300); bitwise 5 columns: 0 mismatches; within 4.77e-07 relative 5 columns: 0 outside, max 2.24e-07
+## LA: ref0 vs new — diagnostics.csv, original columns
+PASS: 6 logged iterations (1..300); bitwise 14 columns: 0 mismatches
+
+## Pancreas: ref0 vs ref0b — training_metrics.csv
+PASS: 31 logged iterations (1..300); bitwise 5 columns: 0 mismatches; within 4.77e-07 relative 5 columns: 0 outside, max 1.63e-07
+## Pancreas: ref0 vs ref0b — diagnostics.csv, original columns
+PASS: 6 logged iterations (1..300); bitwise 14 columns: 0 mismatches
+
+## Pancreas: ref0 vs new — training_metrics.csv
+PASS: 31 logged iterations (1..300); bitwise 5 columns: 0 mismatches; within 4.77e-07 relative 5 columns: 0 outside, max 2.15e-07
+## Pancreas: ref0 vs new — diagnostics.csv, original columns
+PASS: 6 logged iterations (1..300); bitwise 14 columns: 0 mismatches
+
+## new diagnostics columns (this commit): finite, or NaN where a band / subset is empty
+LA: 17 columns x 6 rows: 102 finite, 0 NaN, 0 infinite
+Pancreas: 17 columns x 6 rows: 102 finite, 0 NaN, 0 infinite
+columns: cos_pl_true_b7 cos_sup_true_b7 frac_ch_pl_true_neg_b7 frac_ch_pl_sup_neg_b7 ch_rank_corr_b7 hit_rate_b7 cos_pl_true_b3 cos_sup_true_b3 frac_ch_pl_true_neg_b3 frac_ch_pl_sup_neg_b3 ch_rank_corr_b3 hit_rate_b3 teacher_err_gt_band conf_wrong_095 conf_right_095 ce_lab_in ce_lab_out

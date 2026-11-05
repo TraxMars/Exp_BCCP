@@ -49,23 +49,31 @@ def check_case(image, label, path):
 
 
 class VolumeDataset(Dataset):
-    def __init__(self, root, dataset, patch_size):
+    def __init__(self, root, dataset, patch_size, cache=True):
         self.root, self.dataset = Path(root), dataset
         self.ids = read_ids(root, "train")
         self.patch_size = tuple(patch_size)
         for split in ("val", "test"):
             if (self.root / f"{split}.list").is_file() and set(self.ids) & set(read_ids(root, split)):
                 raise ValueError(f"Train/{split} overlap")
-        # Validate every training volume once, rather than at each sampling.
+        # Validate every training volume once; with cache, keep it in memory (float32 image, uint8 label).
+        self.cache = [] if cache else None
         for case in self.ids:
             path = case_path(root, dataset, case)
-            check_case(*load_case(path), path)
+            image, label = load_case(path)
+            check_case(image, label, path)
+            if cache:
+                self.cache.append((image, label.astype(np.uint8)))
 
     def __len__(self):
         return len(self.ids)
 
     def __getitem__(self, index):
-        image, label = load_case(case_path(self.root, self.dataset, self.ids[index]))
+        if self.cache is None:
+            image, label = load_case(case_path(self.root, self.dataset, self.ids[index]))
+        else:
+            # Fresh int64 label as from disk; the cached image is only read (rot90/flip/pad/crop copy it).
+            image, label = self.cache[index][0], self.cache[index][1].astype(np.int64)
         if SPECS[self.dataset]["rotation"]:
             k = np.random.randint(0, 4)
             axis = np.random.randint(0, 2)
