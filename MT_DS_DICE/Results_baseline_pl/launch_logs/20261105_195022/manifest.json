@@ -1,0 +1,134 @@
+[
+  {
+    "dataset": "LA",
+    "seed": 42,
+    "output_dir": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_42/LA_8l",
+    "command": [
+      "/aita_data/home/aita_duanxuelong/.conda/envs/SSL29/bin/python",
+      "-u",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/code/train.py",
+      "--dataset",
+      "LA",
+      "--labelnum",
+      "8",
+      "--seed",
+      "42",
+      "--output_dir",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_42/LA_8l"
+    ],
+    "gpu": 6,
+    "pid": 546693,
+    "log": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/launch_logs/20261105_195022/seed_42_LA.log",
+    "started_at": "2026-11-05T19:50:22"
+  },
+  {
+    "dataset": "Pancreas",
+    "seed": 42,
+    "output_dir": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_42/Pancreas_6l",
+    "command": [
+      "/aita_data/home/aita_duanxuelong/.conda/envs/SSL29/bin/python",
+      "-u",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/code/train.py",
+      "--dataset",
+      "Pancreas",
+      "--labelnum",
+      "6",
+      "--seed",
+      "42",
+      "--output_dir",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_42/Pancreas_6l"
+    ],
+    "gpu": 4,
+    "pid": 560967,
+    "log": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/launch_logs/20261105_195022/seed_42_Pancreas.log",
+    "started_at": "2026-11-05T19:52:22"
+  },
+  {
+    "dataset": "LA",
+    "seed": 500,
+    "output_dir": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_500/LA_8l",
+    "command": [
+      "/aita_data/home/aita_duanxuelong/.conda/envs/SSL29/bin/python",
+      "-u",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/code/train.py",
+      "--dataset",
+      "LA",
+      "--labelnum",
+      "8",
+      "--seed",
+      "500",
+      "--output_dir",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_500/LA_8l"
+    ],
+    "gpu": 5,
+    "pid": 609718,
+    "log": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/launch_logs/20261105_195022/seed_500_LA.log",
+    "started_at": "2026-11-05T19:56:23"
+  },
+  {
+    "dataset": "Pancreas",
+    "seed": 500,
+    "output_dir": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_500/Pancreas_6l",
+    "command": [
+      "/aita_data/home/aita_duanxuelong/.conda/envs/SSL29/bin/python",
+      "-u",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/code/train.py",
+      "--dataset",
+      "Pancreas",
+      "--labelnum",
+      "6",
+      "--seed",
+      "500",
+      "--output_dir",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_500/Pancreas_6l"
+    ],
+    "gpu": 3,
+    "pid": 719648,
+    "log": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/launch_logs/20261105_195022/seed_500_Pancreas.log",
+    "started_at": "2026-11-05T20:10:26"
+  },
+  {
+    "dataset": "LA",
+    "seed": 1337,
+    "output_dir": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_1337/LA_8l",
+    "command": [
+      "/aita_data/home/aita_duanxuelong/.conda/envs/SSL29/bin/python",
+      "-u",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/code/train.py",
+      "--dataset",
+      "LA",
+      "--labelnum",
+      "8",
+      "--seed",
+      "1337",
+      "--output_dir",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_1337/LA_8l"
+    ],
+    "gpu": 4,
+    "pid": 938648,
+    "log": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/launch_logs/20261105_195022/seed_1337_LA.log",
+    "started_at": "2026-11-05T20:36:32"
+  },
+  {
+    "dataset": "Pancreas",
+    "seed": 1337,
+    "output_dir": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_1337/Pancreas_6l",
+    "command": [
+      "/aita_data/home/aita_duanxuelong/.conda/envs/SSL29/bin/python",
+      "-u",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/code/train.py",
+      "--dataset",
+      "Pancreas",
+      "--labelnum",
+      "6",
+      "--seed",
+      "1337",
+      "--output_dir",
+      "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_1337/Pancreas_6l"
+    ],
+    "gpu": 3,
+    "pid": 1675450,
+    "log": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/launch_logs/20261105_195022/seed_1337_Pancreas.log",
+    "started_at": "2026-11-05T22:03:52"
+  }
+]
