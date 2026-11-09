@@ -6,6 +6,7 @@ L = L_sup + 0.3 * L_pl from iteration 2000 (L_sup before), where both are the fo
 The GPU is chosen by the caller through CUDA_VISIBLE_DEVICES (scripts/launch.py sets it).
 """
 import argparse
+import contextlib
 import copy
 import csv
 import json
@@ -25,6 +26,7 @@ from diagnostics import boundary_diagnostics, gradient_diagnostics, labeled_band
 from evaluate import ducisc_line, evaluate
 from networks import VNetDS
 from objectives import pseudo_label_consistency, supervised_loss, update_ema
+from v1_probe import FIELDS as V1_FIELDS, v1_probe
 
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -44,6 +46,8 @@ def arguments():
         parser.add_argument(f"--{name}", type=type(default), default=default)
     # Logging-only diagnostics (diagnostics.csv) every N iterations; 0 disables them.
     parser.add_argument("--diag_interval", type=int, default=50)
+    # V1 probe (v1_probe.csv, logging only) on the same steps as the diagnostics; off by default.
+    parser.add_argument("--v1_probe", action="store_true")
     # Keep the training volumes in memory (sampling and augmentation are unchanged).
     parser.add_argument("--cache_volumes", action=argparse.BooleanOptionalAction, default=True)
     # Resuming restores the configuration stored in the checkpoint; other arguments are ignored.
@@ -52,6 +56,8 @@ def arguments():
     args = parser.parse_args()
     if not 0 < args.labeled_bs < args.batch_size:
         parser.error("Require 0 < labeled_bs < batch_size")
+    if args.v1_probe and not args.diag_interval:
+        parser.error("--v1_probe runs on diagnostics steps; it needs --diag_interval > 0")
     return args
 
 
@@ -71,7 +77,7 @@ def train(args):
     checkpoint = None
     if args.resume:
         checkpoint = torch.load(args.resume, map_location="cpu", weights_only=False)
-        args = argparse.Namespace(**dict(checkpoint["config"]["args"], resume=args.resume))
+        args = argparse.Namespace(**dict(dict(v1_probe=False), **checkpoint["config"]["args"], resume=args.resume))
         args.data_root, args.output_dir = Path(args.data_root), Path(args.output_dir)
     spec = SPECS[args.dataset]
     args.data_root = args.data_root.resolve()
@@ -136,8 +142,9 @@ def train(args):
               "consistency_weight", "loss_total", "gradient_norm", "lr", "peak_memory_mib", "elapsed_seconds",
               "data_wait_seconds"]
     with (args.output_dir / "training_metrics.csv").open("a", newline="", buffering=1) as handle, \
-            (args.output_dir / "diagnostics.csv").open("a", newline="", buffering=1) as diagnostics_handle:
-        metrics, diagnostics = csv.DictWriter(handle, fieldnames=fields), None
+            (args.output_dir / "diagnostics.csv").open("a", newline="", buffering=1) as diagnostics_handle, \
+            contextlib.ExitStack() as v1_files:
+        metrics, diagnostics, v1_writer = csv.DictWriter(handle, fieldnames=fields), None, None
         if handle.tell() == 0:
             metrics.writeheader()
         while iteration < args.max_iterations:
@@ -149,8 +156,13 @@ def train(args):
                 images = batch["image"].to(args.device, non_blocking=True)
                 # Only labeled GT enters the objective.
                 labels = batch["label"][:args.labeled_bs].to(args.device, non_blocking=True)
-                supervised_outputs = student(images[:args.labeled_bs], deepsup=True)
-                unlabeled_outputs = student(images[args.labeled_bs:], deepsup=True)
+                v1_step = args.v1_probe and (iteration + 1) % args.diag_interval == 0
+                if v1_step:   # the same forward, also returning its x1 / x7_up tensors
+                    supervised_outputs, labeled_features = student(images[:args.labeled_bs], deepsup=True, features=True)
+                    unlabeled_outputs, unlabeled_features = student(images[args.labeled_bs:], deepsup=True, features=True)
+                else:
+                    supervised_outputs = student(images[:args.labeled_bs], deepsup=True)
+                    unlabeled_outputs = student(images[args.labeled_bs:], deepsup=True)
                 loss_sup, ce, dice = supervised_loss(supervised_outputs, labels)
                 with torch.no_grad():
                     teacher_outputs = teacher(images[args.labeled_bs:], deepsup=True)
@@ -172,7 +184,6 @@ def train(args):
                         loss_sup, args.consistency * loss_pl,
                         dict(b7=student.block_seven.conv[-3].weight, b3=student.block_three.conv[-3].weight),
                         loss_true))
-                    del loss_true
                     if any(parameter.grad is not None for parameter in student.parameters()):
                         raise RuntimeError("Gradient diagnostics wrote parameter gradients")
                     probe.update(boundary_diagnostics(unlabeled_outputs[-1], teacher_outputs[-1], hidden))
@@ -184,6 +195,22 @@ def train(args):
                         if diagnostics_handle.tell() == 0:
                             diagnostics.writeheader()
                     diagnostics.writerow(probe)
+                    if v1_step:
+                        # Same tensors, after the diagnostics; sampling seeded by (seed + 12345, iteration) only.
+                        v1_rows = v1_probe(student, iteration + 1, labeled_features, unlabeled_features, labels, hidden,
+                                           teacher_outputs[2], args.consistency * loss_pl, loss_true,
+                                           (args.seed + 12345) * 1_000_003 + iteration + 1)
+                        if any(parameter.grad is not None for parameter in student.parameters()):
+                            raise RuntimeError("V1 probe wrote parameter gradients")
+                        if v1_writer is None:
+                            v1_handle = v1_files.enter_context(
+                                (args.output_dir / "v1_probe.csv").open("a", newline="", buffering=1))
+                            v1_writer = csv.DictWriter(v1_handle, fieldnames=V1_FIELDS)
+                            if v1_handle.tell() == 0:
+                                v1_writer.writeheader()
+                        v1_writer.writerows(v1_rows)
+                        del labeled_features, unlabeled_features
+                    del loss_true
                 loss.backward()
                 gradient_norm = torch.nn.utils.clip_grad_norm_(student.parameters(), float("inf"),
                                                                error_if_nonfinite=True)

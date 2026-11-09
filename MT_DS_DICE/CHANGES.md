@@ -3,6 +3,35 @@
 MT_DS_DICE is now the single baseline MT_DS_PL. Earlier variants (MSE consistency, LossNorm, Plan A)
 are at tags `archive/plan-a-mse` (= `ae3ea95`) and `archive/step1-step2`.
 
+## V1 probe (logging only; README.md, "V1 probe")
+
+| Area | Change |
+|---|---|
+| `code/v1_probe.py` (new) | distance buckets, sampling (own Generator), grouped attention grid, label- and gradient-level reverse correction, output sensitivity, bucket profiles → `v1_probe.csv` |
+| `networks/vnet_ds.py` | `forward(..., features=True)` also returns the same `x1`, `x7_up`; `decode_from_x7(x7_up, x1, dropout=False)`. Construction and computation order unchanged |
+| `train.py` | `--v1_probe` (off by default, needs `--diag_interval`); on probe steps the forward also returns its features; probe after the diagnostics, before `backward()`; `loss_true` kept until after it; the ".grad is None" check repeated; resume of an older checkpoint defaults `v1_probe=False` |
+| Tests | `tests/verify_v1.py`, `tests/zero_interference_v1.py` |
+
+The extra decodes must not update the decoder's BN running buffers in place even if the values are copied
+back: the training graph saved those tensors for `native_batch_norm_backward`, and the version-counter check
+makes `loss.backward()` fail (found by `verify_v1.py`). They run on copies of the buffers instead.
+
+Acceptance (`tests/outputs/v1/`; all PASS):
+
+1. `verify_v1_cpu.txt`: buckets = clipped scipy chessboard distance (13 masks, patch borders touched);
+   hand example for contamination / effective keys / swap / correction / harm; a full probe step leaves .grad
+   None, the state_dict (BN buffers included) and the global RNG unchanged and `backward()` usable; one
+   step's parameter gradients with and without the probe are bitwise equal; signed correction rate 0;
+   deterministic for a fixed seed; query block size has no effect (≤ 1.1e-6).
+2. `zero_interference_v1.txt` (LA, 100 iterations, warmup 50, GPU): committed code vs this code with the probe
+   off / every 50 / every iteration: training metrics bitwise (5 columns) and ≤ 1.33e-7 (CE-derived, the
+   off-vs-off noise floor), the 31 diagnostics columns at 50 and 100 bitwise, final Student / Teacher
+   state_dict (87 BN buffers each) and optimizer momentum bitwise; the probe rows at 50 and 100 are bitwise
+   equal between every-50 and every-iteration runs. Pancreas off vs probe (every 10): PASS.
+3. Overhead (A100, GPU shared with other jobs): LA 2.1 s per probe step (median of 100; first step 3.6 s),
+   Pancreas 1.0 s (median of 10); peak allocated +15 MiB (LA) / +18 MiB (Pancreas); every 50 iterations
+   this is about +12 % (LA) / +5 % (Pancreas) training time, ≈ 11 / 5 min over 15000 iterations.
+
 ## What changed and why
 
 | Area | Change | Why |
@@ -51,9 +80,9 @@ columns bitwise and the CE-derived ones within 4 float32 ULP.
    share 32 % → 19 % (LA), 76 % → 25 % (Pancreas); peak memory (PSS, main + workers) 1.75 → 2.66 GiB
    (LA), 1.79 → 3.40 GiB (Pancreas).
 
-## Not started (after review)
+## Runs
 
-```bash
-python scripts/launch.py --datasets LA Pancreas --seeds 42 500 1337 --output_root Results_baseline_pl
-python scripts/report.py --root Results_baseline_pl --output summary/baseline_seeds.md
-```
+- V0 baseline: `scripts/launch.py --datasets LA Pancreas --seeds 42 500 1337 --output_root Results_baseline_pl`,
+  run from the separate checkout `Baseline/MT_DS_DICE` at 49758b3; all 6 runs finished 2026-11-06.
+  Test Dice (nms0, mean ± std, n = 3): LA_8l 89.38 ± 0.20, Pancreas_6l 80.64 ± 0.16.
+- V1 probe: LA_8l and Pancreas_6l, seed 42, `Results_V1/` (commands in README.md, "V1 probe").

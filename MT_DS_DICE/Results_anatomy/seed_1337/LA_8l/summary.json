@@ -1,0 +1,13 @@
+{
+  "run": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_1337/LA_8l",
+  "dataset": "LA",
+  "seed": 1337,
+  "iteration": 15000,
+  "run_commit": "49758b351377f2f5214a9ad2d9940e9a9b07d3cf",
+  "anatomy_commit": "1c7173ee2855c5e95dd0700f2a1cefeeef61ffbd",
+  "cases": 72,
+  "reference": true,
+  "seconds": 1136.781234741211,
+  "device": "cuda",
+  "gpu": "NVIDIA A100-SXM4-40GB"
+}

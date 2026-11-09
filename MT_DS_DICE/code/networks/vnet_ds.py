@@ -55,7 +55,8 @@ class VNetDS(nn.Module):
         self.out_conv_3 = nn.Conv3d(4 * f, n_classes, 1, padding=0)
         self.out_conv_4 = nn.Conv3d(8 * f, n_classes, 1, padding=0)
 
-    def forward(self, x, deepsup=False):
+    def forward(self, x, deepsup=False, features=False):
+        """With features=True also returns dict(x1=x1, x7_up=x7_up) (the same tensors, nothing recomputed)."""
         x1 = self.block_one(x)
         x2 = self.block_two(self.block_one_dw(x1))
         x3 = self.block_three(self.block_two_dw(x2))
@@ -75,4 +76,12 @@ class VNetDS(nn.Module):
         if self.has_dropout:
             x9 = self.dropout(x9)
         out.append(self.out_conv(x9))
-        return out if deepsup else out[-1]
+        result = out if deepsup else out[-1]
+        return (result, dict(x1=x1, x7_up=x7_up)) if features else result
+
+    def decode_from_x7(self, x7_up, x1, dropout=False):
+        """The full-resolution head from D2 (x7_up) on: block_eight → block_eight_up → +x1 → block_nine → out_conv."""
+        x9 = self.block_nine(self.block_eight_up(self.block_eight(x7_up)) + x1)
+        if dropout and self.has_dropout:
+            x9 = self.dropout(x9)
+        return self.out_conv(x9)

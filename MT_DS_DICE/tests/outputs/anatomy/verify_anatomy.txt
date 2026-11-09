@@ -1,0 +1,11 @@
+PASS distance: signed Chebyshev distance = brute force on a random 9x8x7 mask (bg +k, fg -k); empty mask -> FAR
+PASS taxonomy, over-segmented by 1 voxel: block 0.000, shift 1.000, jitter 0.000
+PASS taxonomy, random +-1 jitter: block 0.000, shift 0.000, jitter 1.000
+PASS taxonomy, missed cap: block 1.000, shift 0.000, jitter 0.000
+PASS taxonomy, distant island: block 1.000, shift 0.000, jitter 0.000
+PASS taxonomy, missed thin tube (|d| <= 2, |d~| large): block 0.910, shift 0.000, jitter 0.090
+PASS taxonomy, uniform 3-voxel over-segmentation: block 0.000, shift 1.000, jitter 0.000
+PASS taxonomy, uniform 6-voxel over-segmentation (block by definition): block 1.000, shift 0.000, jitter 0.000
+PASS contributions: dice 0.8497, ddice block 0.0267 / shift 0.1157 / jitter 0.0000, dhd95 block 20.08; fixing all errors gives Dice 1; reachable share of a 10-voxel-deep missed cap 0.815 (< 1)
+PASS tiling: every voxel covered once, LA rot90/flip and the 8 flips inverted exactly (per-voxel model), volume smaller than the patch padded and cropped back, lower heads resized to full resolution
+PASS auroc: perfect / inverted / single-class cases

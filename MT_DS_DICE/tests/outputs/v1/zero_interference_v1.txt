@@ -1,0 +1,55 @@
+# V1 zero interference: LA, seed 42, 100 iterations, --warmup_iterations 50 (L_pl from 50), --val_interval 0, GPU 6 (NVIDIA A100-SXM4-40GB)
+
+# base = committed code 49758b351377f2f5214a9ad2d9940e9a9b07d3cf (git archive), diag every 50; off = this code without --v1_probe; v1_50 / v1_1 = --v1_probe with diagnostics every 50 / every iteration
+
+## training_metrics.csv: base vs off
+PASS: 11 logged iterations (1..100); bitwise 5 columns: 0 mismatches; within 4.77e-07 relative 5 columns: 0 outside, max 1.26e-07
+
+## training_metrics.csv: base vs v1_50
+PASS: 11 logged iterations (1..100); bitwise 5 columns: 0 mismatches; within 4.77e-07 relative 5 columns: 0 outside, max 1.33e-07
+
+## training_metrics.csv: base vs v1_1
+PASS: 11 logged iterations (1..100); bitwise 5 columns: 0 mismatches; within 4.77e-07 relative 5 columns: 0 outside, max 1.33e-07
+
+## diagnostics.csv rows 50 and 100, all columns: base vs off
+PASS: 2 rows x 31 columns, 0 mismatches
+
+## diagnostics.csv rows 50 and 100, all columns: base vs v1_50
+PASS: 2 rows x 31 columns, 0 mismatches
+
+## diagnostics.csv rows 50 and 100, all columns: base vs v1_1
+PASS: 2 rows x 31 columns, 0 mismatches
+
+## final state (iteration 100): base vs off
+PASS: student: 211 tensors (87 BN buffers), 0 differ; teacher: 211 tensors (87 BN buffers), 0 differ; optimizer momentum buffers: identical
+
+## final state (iteration 100): base vs v1_50
+PASS: student: 211 tensors (87 BN buffers), 0 differ; teacher: 211 tensors (87 BN buffers), 0 differ; optimizer momentum buffers: identical
+
+## final state (iteration 100): base vs v1_1
+PASS: student: 211 tensors (87 BN buffers), 0 differ; teacher: 211 tensors (87 BN buffers), 0 differ; optimizer momentum buffers: identical
+
+## v1_probe.csv rows 50 and 100 (without meta/probe_seconds): v1_50 vs v1_1
+PASS: 1426 rows x 7 columns, 0 mismatches
+
+files: off wrote v1_probe.csv: False; v1_1 diagnostics rows: 100; v1_1 probe steps: 100
+
+## overhead: LA (each run alone on the GPU, sequentially)
+| run | elapsed at 100 (s) | peak allocated (MiB) | probe steps | probe s/step: mean / median / max |
+|---|---|---|---|---|
+| base | 35.3 | 5717 | 0 | — |
+| off | 35.0 | 5717 | 0 | — |
+| v1_50 | 43.0 | 5732 | 2 | 3.259 / 3.259 / 3.554 |
+| v1_1 | 258.6 | 5738 | 100 | 2.086 / 2.139 / 2.909 |
+
+## training_metrics.csv: Pancreas off vs v1 (diag every 10)
+PASS: 11 logged iterations (1..100); bitwise 5 columns: 0 mismatches; within 4.77e-07 relative 5 columns: 0 outside, max 1.61e-07
+
+## overhead: Pancreas, diag every 10
+| run | elapsed at 100 (s) | peak allocated (MiB) | probe steps | probe s/step: mean / median / max |
+|---|---|---|---|---|
+| pancreas_off | 44.4 | 5076 | 0 | — |
+| pancreas_v1 | 52.7 | 5094 | 10 | 1.057 / 0.960 / 1.683 |
+
+
+OVERALL: PASS

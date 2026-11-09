@@ -1,0 +1,7 @@
+PASS: distance buckets equal the clipped scipy chessboard distance on 13 masks (100160 voxels, 3 borders touched); constant masks have no band
+PASS: contamination [0.2, 0.5, 1.0], effective keys, swap; correction rate 1.0/1.8, harm rate 0.5/1.2 (conf>0.95: 1.0), masses /3.0, coverage 0.6 as hand-computed; a tie counts as neither
+PASS: same seeded initial weights and parameter order; forward(features=True) returns identical outputs; decode_from_x7(x7_up, x1) reproduces the full-resolution head bitwise (train- and eval-mode BN)
+PASS: probe step on a 48x48x32 batch: 711 rows, families ['attention', 'attention_uniform', 'profile', 'reverse_grad', 'reverse_label', 'reverse_label_uniform', 'sample', 'sensitivity']; signed correction rate 0 (or NaN without wrong keys) in all 14 (setting, subset) pairs (unsigned G=4 tau=0.1: 0.581, wrong-key mass share 0.642)
+PASS: no parameter .grad, state_dict incl. BN buffers bitwise unchanged, global RNG untouched, loss.backward() still works; same seed → identical rows; query blocks of 37 vs 1024: max |diff| 1.1e-06; another seed → different samples
+PASS: one training step with vs without the probe: all parameter gradients, the state_dict (BN buffers included) and the global RNG state after backward are bitwise identical
+  non-finite values (empty subsets in this tiny case): 42 of 710, e.g. [('attention', 'signed', 1, 0.05, 'd3', 'contamination'), ('attention', 'signed', 1, 0.05, 'd3', 'eff_keys'), ('attention', 'signed', 1, 0.05, 'd3', 'swap')]
