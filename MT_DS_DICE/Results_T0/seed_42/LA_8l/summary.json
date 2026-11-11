@@ -1,0 +1,23 @@
+{
+  "run": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_42/LA_8l",
+  "dataset": "LA",
+  "seed": 42,
+  "iteration": 15000,
+  "run_commit": "49758b351377f2f5214a9ad2d9940e9a9b07d3cf",
+  "t0_commit": "ebb4735f1e85bc6f90d96cac91e9c9a3c9ee5ef1",
+  "cases": 72,
+  "seconds": 3110.422689676285,
+  "mode_seconds": {
+    "P0": 115.7331714630127,
+    "P1": 114.3612048625946,
+    "P2": 103.7930657863617,
+    "P3": 103.37831807136536,
+    "P4": 124.70076441764832,
+    "P5": 842.7535178661346,
+    "P6": 468.03772950172424
+  },
+  "device": "cuda",
+  "gpu": "NVIDIA A100-SXM4-40GB",
+  "dropout_masks_p0_p2_identical_case0": true,
+  "dropout_calls_case0": 16
+}

@@ -1,0 +1,23 @@
+{
+  "run": "/aita_data/home/aita_duanxuelong/Baseline/MT_DS_DICE/Results_baseline_pl/seed_1337/Pancreas_6l",
+  "dataset": "Pancreas",
+  "seed": 1337,
+  "iteration": 15000,
+  "run_commit": "49758b351377f2f5214a9ad2d9940e9a9b07d3cf",
+  "t0_commit": "ebb4735f1e85bc6f90d96cac91e9c9a3c9ee5ef1",
+  "cases": 56,
+  "seconds": 4839.634512901306,
+  "mode_seconds": {
+    "P0": 99.63958263397217,
+    "P1": 97.89794397354126,
+    "P2": 91.22254252433777,
+    "P3": 98.10294890403748,
+    "P4": 503.01263403892517,
+    "P5": 734.0740437507629,
+    "P6": 1327.399146080017
+  },
+  "device": "cuda",
+  "gpu": "NVIDIA A100-SXM4-40GB",
+  "dropout_masks_p0_p2_identical_case0": true,
+  "dropout_calls_case0": 32
+}

@@ -1,0 +1,4 @@
+PASS settings: P0 batch BN + Dropout, P1 batch BN only, P2 running BN + Dropout, P3/P4 eval, P5/P6 as P0; one model copy per mode
+PASS partner: with running BN the partner leaves the tile's output unchanged (max diff 2.7e-07); with batch statistics it changes it (control)
+PASS comparability: P0-P3 share grid offsets [30, 10, 31], tile order, LA augmentation and 8 partner crops; P0 / P2 Dropout masks identical over 16 Dropout calls (another seed: different)
+PASS sliding: eval windows = evaluate.predict_volume exactly (padding included); with partner and LA augmentation every window is turned back exactly (per-voxel model)

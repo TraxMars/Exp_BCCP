@@ -222,6 +222,61 @@ CUDA_VISIBLE_DEVICES=<gpu> python scripts/anatomy.py --run ../../Baseline/MT_DS_
 python scripts/report_anatomy.py --root Results_anatomy --output summary/anatomy.md
 ```
 
+## T0: Teacher inference mode vs pseudo-label quality (offline; `scripts/t0.py`)
+
+The anatomy found the pseudo-labels as made in training (`train`) 4.9 Dice points worse than the eval sliding
+window on Pancreas (72.61 vs 77.51), not on LA. T0 splits the gap into BN statistics, Dropout, overlap averaging
+and random noise. Inputs as in the anatomy (the 6 V0 Teachers at iteration 15000, unlabeled cases, hidden GT);
+nothing is trained or written to the V0 runs.
+
+**Modes** (every unlabeled case; one model copy per mode, loaded from the Teacher, since train-mode forwards move
+the BN running buffers). Tiles, partner crops and LA augmentation as in the anatomy's pass 0 (`anatomy.tiled_pass`).
+
+| mode | BN | Dropout (x5, x9) | input |
+|---|---|---|---|
+| P0 | batch statistics | on | tiles + partner (= anatomy pass 0, the training pseudo-labels) |
+| P1 | batch statistics | off | tiles + partner |
+| P2 | running | on | tiles |
+| P3 | running | off | tiles |
+| P4 | running | off | `evaluate.predict_volume` windows, overlap-averaged probabilities (test protocol) |
+| P5 | batch statistics | on | P0 repeated 8 times (new Dropout masks and partners, P0's grid, no flips); mean z, then argmax |
+| P6 | batch statistics | on | P4's windows, each forwarded as in P0 (partner, LA augmentation); mean probability |
+
+Comparability: before each of P0–P3 the numpy rng is reset to `default_rng(seed·1000 + index)` and the torch
+seed to `seed·1000 + index`, so P0–P3 share the grid offsets, the tile order, the LA augmentation and the partner
+crops, and P0 / P2 share the Dropout masks. To keep the batch shape (hence the Dropout masks and the rng stream)
+identical, P2 and P3 also carry the partner in the batch; with running BN statistics samples do not interact, so
+the partner does not change the tile's output (`tests/verify_t0.py`). The Dropout-mask identity of P0 and P2 is
+checked on the first case of every run (`summary.json`). P5 and P6 use their own seeds.
+
+**Per case and mode:** Dice, HD95, FP, FN; ΔDice of block / shift / jitter (`anatomy.classify_errors`,
+`anatomy_rows`); error rate in the GT band (|d| ≤ 2) and the share of those errors with confidence > 0.95
+(confidence from z, or from the averaged probability for P4 / P6); Dice agreement with P0's pseudo-label.
+
+**Checks (stop if they fail):** mean P0 Dice within ±1 of the anatomy's `train` Dice (LA 89.17, Pancreas 72.61,
+seed means); P4 equal per case to the anatomy's `sliding` reference.
+
+**Criteria (fixed before the run).** Δ_X = mean over seeds of [mean over cases Dice(X) − mean over cases
+Dice(P0)], in Dice points. Reported with the per-seed Δ and the paired per-case difference (mean over seeds per
+case, then mean and 95 % t-interval over cases).
+- R1 (the inference mode is the main cause): on Pancreas Δ_P3 ≥ 3.0 and positive for all 3 seeds.
+- R2 (attribution): Δ_P1 (Dropout off only) and Δ_P2 (BN running only); a factor with Δ ≥ 2.0 is important.
+  If one factor alone reaches ≥ 70 % of Δ_P3, the fix changes only that factor (both qualify: the larger Δ);
+  otherwise the fix is P3 (both).
+- R3 (noise or bias): Δ_P5 ≥ 0.7 · Δ_P3 → mainly random noise (averaging recovers it); otherwise mainly a
+  systematic bias (e.g. BN batch statistics).
+- R4 (overlap averaging): Δ_P4 − Δ_P3 ≥ 2.0 → overlap averaging contributes clearly as well. Δ_P6 reported.
+- LA control: expected |Δ| < 1 for every mode; Δ_P3 ≤ −1 on LA is flagged (the fix would hurt LA).
+- Conclusion: R1 holds → training experiment T1: pseudo-labels with the minimal fix of R2, screened with seed 42
+  on both datasets; R1 does not hold and R4 holds → report, discuss (repeated inference is costly); neither →
+  report, the gap has another cause, discuss.
+
+```bash
+CUDA_VISIBLE_DEVICES=<gpu> python scripts/t0.py --run ../../Baseline/MT_DS_DICE/Results_baseline_pl/seed_42/Pancreas_6l \
+    --output Results_T0/seed_42/Pancreas_6l
+python scripts/report_t0.py --root Results_T0 --anatomy Results_anatomy --output summary/T0.md
+```
+
 ## Tests
 
 `tests/verify_core.py` (backbone vs DuCiSC's VNet, initialization, gradients, EMA),
